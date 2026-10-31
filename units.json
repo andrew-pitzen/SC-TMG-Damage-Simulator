@@ -803,13 +803,13 @@
           "kind": "upgrade",
           "side": "attack",
           "effects": {
-            "precision": 3
+            "pierce_x": 3
           },
           "phase": "ranged",
           "weapons": [
             "Quad K12"
           ],
-          "note": "Quad K12 Precision becomes (3) instead of (2). Precision never stacks (highest value wins), so this overrides Commando Stimpack's Precision (2)."
+          "note": "Quad K12 becomes Pierce Armour (3) instead of (2)."
         }
       ]
     },
@@ -1350,7 +1350,8 @@
       "tags": [
         "Biological",
         "Psionic",
-        "Ground"
+        "Ground",
+        "Armoured"
       ],
       "armour": 4,
       "evade": null,
