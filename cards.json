@@ -266,6 +266,17 @@
       },
       "note": "Friendly Zerg unit on Creep."
     },
+        "Zerg: Zagara - Tough (1) for Size 3 units": {
+      "faction": "Zerg",
+      "phase": "any",
+      "effects": {
+        "tough": 1
+      },
+      "when": {
+        "own_size": 3
+      },
+      "note": "Zagara buff: a friendly Size 3 unit gains Tough (1)."
+    },
     "Zerg: Zagara Transfusion (-2 total damage)": {
       "faction": "Zerg",
       "phase": "any",
@@ -318,25 +329,6 @@
       "effects": {
         "ignore_surge": true
       }
-    },
-    "Zerg: Zagara - Tough (1) for Size 3 units": {
-      "faction": "Zerg",
-      "phase": "any",
-      "effects": {
-        "tough": 1
-      },
-      "when": {
-        "own_size": 3
-      },
-      "note": "Zagara buff: a friendly Size 3 unit gains Tough (1)."
-    },
-    "Zerg: Malignant Creep (Dodge 1, on Creep)": {
-      "faction": "Zerg",
-      "phase": "any",
-      "effects": {
-        "dodge": 1
-      },
-      "note": "Friendly Zerg unit on Creep gains Dodge (1). Dodge never stacks, so ticking it together with Reactive Tissue changes nothing."
     }
   }
 }
