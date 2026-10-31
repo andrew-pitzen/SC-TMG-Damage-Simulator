@@ -1,0 +1,2285 @@
+{
+  "_readme": "Unit data transcribed (OCR) from the official StarCraft TMG faction card sheets (Zerg v1.03.26, Terran v1.04.26, Protoss). Weapon keys: name, phase (ranged|melee), rng, target, roa, hit, dmg, surge (None|D3|D6), surge_plus (D3+1 -> 1), surge_tags (any listed tag triggers surge), anti_evade, precision, critical, pierce_x/pierce_tag, keywords (display only), upgrade (true = replaces/modifies a base weapon). Unit keys: tags, armour/evade (null = none), hp, shield, models_default/models_max, size, verify (note when the source was unclear). Edit or add units freely.",
+  "Terran": {
+    "Marine": {
+      "tags": [
+        "Biological",
+        "Light",
+        "Ground"
+      ],
+      "armour": 5,
+      "evade": 5,
+      "hp": 2,
+      "shield": 0,
+      "models_default": 6,
+      "models_max": 9,
+      "size": 2,
+      "weapons": [
+        {
+          "name": "C-14 Rifle",
+          "phase": "ranged",
+          "rng": 12,
+          "target": "All",
+          "roa": 2,
+          "hit": 3,
+          "dmg": 1,
+          "surge": "D3",
+          "surge_tags": [
+            "Light"
+          ]
+        },
+        {
+          "name": "AGG-12 (upgrade)",
+          "phase": "ranged",
+          "rng": 12,
+          "target": "All",
+          "roa": 2,
+          "hit": 3,
+          "dmg": 1,
+          "surge": "D3",
+          "surge_tags": [
+            "Armoured"
+          ],
+          "keywords": [
+            "Long Range 18\"",
+            "Specialist"
+          ],
+          "upgrade": true
+        },
+        {
+          "name": "Rocket Launcher (upgrade, 1 model)",
+          "phase": "ranged",
+          "rng": 12,
+          "target": "All",
+          "roa": 4,
+          "hit": 3,
+          "dmg": 1,
+          "keywords": [
+            "Indirect Fire",
+            "Long Range 18\"",
+            "Sidearm",
+            "Specialist"
+          ],
+          "upgrade": true
+        },
+        {
+          "name": "Strike",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 1,
+          "hit": 5,
+          "dmg": 1
+        },
+        {
+          "name": "Bayonet (upgrade)",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 2,
+          "hit": 5,
+          "dmg": 1,
+          "upgrade": true
+        }
+      ],
+      "options": [
+        {
+          "name": "Stimpack",
+          "kind": "ability",
+          "side": "attack",
+          "effects": {
+            "precision": 3
+          },
+          "phase": "any",
+          "weapons": [
+            "Strike",
+            "Bayonet",
+            "C-14 Rifle"
+          ],
+          "note": "1 CP. Close Combat weapons and the C-14 Rifle gain Precision (3). The 2 non-lethal damage to the unit is not modelled."
+        },
+        {
+          "name": "Slugthrower",
+          "kind": "passive",
+          "side": "attack",
+          "effects": {
+            "anti_evade": 1
+          },
+          "phase": "ranged",
+          "weapons": [
+            "C-14 Rifle"
+          ],
+          "situational": true,
+          "note": "C-14 Rifle gains Anti-Evade (1) when the target is within 8 inches."
+        },
+        {
+          "name": "Grenades-Frag",
+          "kind": "passive",
+          "side": "attack",
+          "effects": {
+            "set_surge_die": "D6"
+          },
+          "phase": "ranged",
+          "weapons": [
+            "C-14 Rifle"
+          ],
+          "situational": true,
+          "note": "C-14 Rifle S Dice becomes D6 when the target is within 8 inches."
+        },
+        {
+          "name": "Combat Shield",
+          "kind": "ability",
+          "side": "defend",
+          "effects": {
+            "grant_evade_roll": true
+          },
+          "phase": "melee",
+          "note": "1 CP. Always eligible to make an Evade roll against Close Combat attacks."
+        }
+      ]
+    },
+    "Marauder": {
+      "tags": [
+        "Armoured",
+        "Biological",
+        "Ground"
+      ],
+      "armour": 4,
+      "evade": 6,
+      "hp": 5,
+      "shield": 0,
+      "models_default": 4,
+      "models_max": 4,
+      "size": 2,
+      "weapons": [
+        {
+          "name": "Quad K12",
+          "phase": "ranged",
+          "rng": 12,
+          "target": "Ground",
+          "roa": 3,
+          "hit": 3,
+          "dmg": 1,
+          "surge": "D3",
+          "surge_tags": [
+            "Armoured"
+          ],
+          "pierce_x": 2,
+          "pierce_tag": "Armoured",
+          "keywords": [
+            "Pierce Armoured (2)"
+          ]
+        },
+        {
+          "name": "Strike",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 2,
+          "hit": 4,
+          "dmg": 1
+        }
+      ],
+      "options": [
+        {
+          "name": "Stimpack",
+          "kind": "ability",
+          "side": "attack",
+          "effects": {
+            "precision": 2
+          },
+          "phase": "any",
+          "weapons": [
+            "Strike",
+            "Quad K12"
+          ],
+          "note": "1 CP. Precision (2) for Close Combat weapons and Quad K12."
+        },
+        {
+          "name": "Veteran of Tarsonis",
+          "kind": "upgrade",
+          "side": "defend",
+          "effects": {
+            "armour_mod": 1
+          },
+          "phase": "any",
+          "situational": true,
+          "note": "+1 Armour while within 3 inches of a Mission Marker."
+        },
+        {
+          "name": "Kinetic Foam",
+          "kind": "upgrade",
+          "side": "defend",
+          "effects": {
+            "hp_bonus": 1
+          },
+          "phase": "any",
+          "note": "+1 Hit Point per model."
+        }
+      ]
+    },
+    "Medic": {
+      "tags": [
+        "Biological",
+        "Light",
+        "Ground"
+      ],
+      "armour": 5,
+      "evade": 5,
+      "hp": 2,
+      "shield": 0,
+      "models_default": 3,
+      "models_max": 3,
+      "size": 2,
+      "weapons": [
+        {
+          "name": "Strike",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 1,
+          "hit": 5,
+          "dmg": 1
+        }
+      ]
+    },
+    "Jim Raynor": {
+      "tags": [
+        "Biological",
+        "Ground"
+      ],
+      "armour": 4,
+      "evade": 5,
+      "hp": 8,
+      "shield": 0,
+      "models_default": 1,
+      "models_max": 1,
+      "size": 2,
+      "weapons": [
+        {
+          "name": "Commando Rifle",
+          "phase": "ranged",
+          "rng": 18,
+          "target": "All",
+          "roa": 3,
+          "hit": 3,
+          "dmg": 1,
+          "surge": "D3",
+          "surge_tags": [
+            "Armoured"
+          ],
+          "pierce_x": 3,
+          "pierce_tag": "Armoured",
+          "keywords": [
+            "Bulky",
+            "Pierce Armoured (3)"
+          ]
+        },
+        {
+          "name": "C-14 Rifle (upgrade)",
+          "phase": "ranged",
+          "rng": 12,
+          "target": "All",
+          "roa": 6,
+          "hit": 3,
+          "dmg": 1,
+          "surge": "D3",
+          "surge_plus": 1,
+          "surge_tags": [
+            "Light"
+          ],
+          "keywords": [
+            "Burst Fire 8\" (3)"
+          ],
+          "upgrade": true
+        },
+        {
+          "name": "\"Justice\" Revolver",
+          "phase": "ranged",
+          "rng": 6,
+          "target": "Ground",
+          "roa": 2,
+          "hit": 3,
+          "dmg": 2,
+          "anti_evade": 2,
+          "keywords": [
+            "Anti-Evade (2)",
+            "Sidearm",
+            "Pinpoint"
+          ]
+        },
+        {
+          "name": "Bayonet",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 2,
+          "hit": 4,
+          "dmg": 1,
+          "surge": "D3",
+          "surge_tags": [
+            "Light"
+          ]
+        }
+      ]
+    },
+    "Raynor's Raider": {
+      "tags": [
+        "Biological",
+        "Light",
+        "Ground"
+      ],
+      "armour": 5,
+      "evade": 5,
+      "hp": 2,
+      "shield": 0,
+      "models_default": 6,
+      "models_max": 6,
+      "size": 2,
+      "weapons": [
+        {
+          "name": "C-14 Rifle",
+          "phase": "ranged",
+          "rng": 12,
+          "target": "All",
+          "roa": 2,
+          "hit": 3,
+          "dmg": 1,
+          "surge": "D3",
+          "surge_tags": [
+            "Light"
+          ]
+        },
+        {
+          "name": "Bayonet",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 2,
+          "hit": 5,
+          "dmg": 1
+        }
+      ]
+    },
+    "Goliath": {
+      "tags": [
+        "Armoured",
+        "Mechanical",
+        "Ground"
+      ],
+      "armour": 4,
+      "evade": null,
+      "hp": 10,
+      "shield": 0,
+      "models_default": 1,
+      "models_max": 1,
+      "size": 3,
+      "weapons": [
+        {
+          "name": "Autocannon",
+          "phase": "ranged",
+          "rng": 12,
+          "target": "Ground",
+          "roa": 9,
+          "hit": 4,
+          "dmg": 1,
+          "keywords": [
+            "Long Range 18\""
+          ]
+        },
+        {
+          "name": "Underbelly Machine Gun",
+          "phase": "ranged",
+          "rng": 8,
+          "target": "Ground",
+          "roa": 6,
+          "hit": 3,
+          "dmg": 1,
+          "surge": "D3",
+          "surge_tags": [
+            "Light"
+          ],
+          "keywords": [
+            "Pinpoint",
+            "Sidearm"
+          ]
+        },
+        {
+          "name": "Hellfire Missiles",
+          "phase": "ranged",
+          "rng": 16,
+          "target": "Flying",
+          "roa": 6,
+          "hit": 3,
+          "dmg": 1,
+          "surge": "D3",
+          "surge_tags": [
+            "Light"
+          ],
+          "anti_evade": 1,
+          "keywords": [
+            "Anti-Evade (1)",
+            "Sidearm"
+          ]
+        },
+        {
+          "name": "Scatter Missiles (upgrade)",
+          "phase": "ranged",
+          "rng": 18,
+          "target": "Flying",
+          "roa": 6,
+          "hit": 5,
+          "dmg": 1,
+          "surge": "D3",
+          "surge_tags": [
+            "Light"
+          ],
+          "keywords": [
+            "Indirect Fire",
+            "Locked In (6)",
+            "Long Range 24\"",
+            "Sidearm"
+          ],
+          "upgrade": true
+        },
+        {
+          "name": "Haywire Missiles (upgrade)",
+          "phase": "ranged",
+          "rng": 12,
+          "target": "Flying",
+          "roa": 3,
+          "hit": 3,
+          "dmg": 1,
+          "surge": "D3",
+          "surge_tags": [
+            "Armoured"
+          ],
+          "pierce_x": 3,
+          "pierce_tag": "Armoured",
+          "keywords": [
+            "Pierce Armoured (3)",
+            "Sidearm"
+          ],
+          "upgrade": true
+        },
+        {
+          "name": "Stomp",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 4,
+          "hit": 5,
+          "dmg": 1
+        }
+      ],
+      "options": [
+        {
+          "name": "Ares-Class Targeting System",
+          "kind": "upgrade",
+          "side": "attack",
+          "effects": {
+            "precision": 1
+          },
+          "phase": "ranged",
+          "weapons": [
+            "Autocannon",
+            "Underbelly Machine Gun"
+          ],
+          "note": "Autocannon and Underbelly Machine Gun gain Precision (1)."
+        },
+        {
+          "name": "Target Lock",
+          "kind": "ability",
+          "side": "attack",
+          "effects": {
+            "grant_surge_die": "D3",
+            "grant_surge_plus": 1,
+            "grant_surge_tags": [
+              "Light",
+              "Armoured"
+            ]
+          },
+          "phase": "ranged",
+          "weapons": [
+            "Autocannon"
+          ],
+          "note": "1 CP. Autocannon gains Surge Light + Armoured with S Dice D3+1. Trigger wording is garbled in the source."
+        }
+      ]
+    },
+    "Point Defense Drone": {
+      "tags": [
+        "Armoured",
+        "Flying",
+        "Mechanical"
+      ],
+      "armour": 6,
+      "evade": 6,
+      "hp": 3,
+      "shield": 0,
+      "models_default": 1,
+      "models_max": 1,
+      "size": 1,
+      "weapons": []
+    },
+    "Siege Tank": {
+      "tags": [
+        "Armoured",
+        "Mechanical",
+        "Ground"
+      ],
+      "armour": 5,
+      "evade": null,
+      "hp": 14,
+      "shield": 0,
+      "models_default": 1,
+      "models_max": 1,
+      "size": 2,
+      "weapons": [
+        {
+          "name": "Twin Cannon",
+          "phase": "ranged",
+          "rng": 12,
+          "target": "Ground",
+          "roa": 8,
+          "hit": 3,
+          "dmg": 1,
+          "surge": "D6",
+          "surge_tags": [
+            "Armoured"
+          ],
+          "pierce_x": 2,
+          "pierce_tag": "Armoured",
+          "keywords": [
+            "Pierce Armoured (2)"
+          ],
+          "requires": {
+            "Siege Mode": false
+          }
+        },
+        {
+          "name": "Shock Cannon",
+          "phase": "ranged",
+          "rng": 18,
+          "target": "Ground",
+          "roa": 4,
+          "hit": 4,
+          "dmg": 1,
+          "surge": "BT",
+          "surge_tags": [
+            "Light",
+            "Armoured"
+          ],
+          "blast": true,
+          "requires": {
+            "Siege Mode": true
+          },
+          "keywords": [
+            "Blast Template: RoA = BT + 4, S Dice = BT"
+          ]
+        },
+        {
+          "name": "Rolling Over",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 2,
+          "hit": 2,
+          "dmg": 1
+        }
+      ],
+      "toggles": [
+        {
+          "name": "Siege Mode",
+          "label": "Siege Mode (Size 3; changes weapons and abilities)",
+          "default": false,
+          "size_when_on": 3
+        }
+      ],
+      "options": [
+        {
+          "name": "Heavy Plating",
+          "kind": "passive",
+          "side": "defend",
+          "effects": {
+            "tough": 1
+          },
+          "phase": "any",
+          "when": {
+            "toggle": {
+              "Siege Mode": false
+            }
+          },
+          "note": "Gains Tough (1) on Armour rolls while NOT in Siege Mode."
+        },
+        {
+          "name": "Aftershock Rounds",
+          "kind": "passive",
+          "side": "attack",
+          "effects": {
+            "dmg_set_target_size": true
+          },
+          "phase": "any",
+          "when": {
+            "toggle": {
+              "Siege Mode": true
+            }
+          },
+          "note": "While in Siege Mode, Damage is treated as equal to the target's current Size (min 1). Applied to every weapon; wording is partly garbled in the source."
+        }
+      ]
+    },
+    "Nova (Stealth Mode)": {
+      "tags": [
+        "Biological",
+        "Psionic",
+        "Ground"
+      ],
+      "armour": 5,
+      "evade": 5,
+      "hp": 8,
+      "shield": 0,
+      "models_default": 1,
+      "models_max": 1,
+      "size": 2,
+      "weapons": [
+        {
+          "name": "C-20A Canister Rifle",
+          "phase": "ranged",
+          "rng": 12,
+          "target": "All",
+          "roa": 4,
+          "hit": 3,
+          "dmg": 2,
+          "critical": 2,
+          "keywords": [
+            "Critical Hit (2)",
+            "Long Range 18\""
+          ]
+        },
+        {
+          "name": "Combat Knife",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 3,
+          "hit": 5,
+          "dmg": 1
+        }
+      ],
+      "options": [
+        {
+          "name": "Super Stimpack",
+          "kind": "ability",
+          "side": "attack",
+          "effects": {
+            "precision": 2
+          },
+          "phase": "any",
+          "note": "1 CP. All of Nova's weapons gain Precision (2)."
+        }
+      ]
+    },
+    "Nova (Assault Mode)": {
+      "tags": [
+        "Biological",
+        "Psionic",
+        "Ground"
+      ],
+      "armour": 5,
+      "evade": 5,
+      "hp": 8,
+      "shield": 0,
+      "models_default": 1,
+      "models_max": 1,
+      "size": 2,
+      "weapons": [
+        {
+          "name": "Hellfire Shotgun",
+          "phase": "ranged",
+          "rng": 8,
+          "target": "Ground",
+          "roa": 3,
+          "hit": 4,
+          "dmg": 2,
+          "surge": "D3",
+          "surge_tags": [
+            "Light"
+          ],
+          "anti_evade": 1,
+          "keywords": [
+            "Anti-Evade (1)",
+            "Burst Fire 4\" (3)"
+          ]
+        },
+        {
+          "name": "Monomolecular Blade",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 8,
+          "hit": 3,
+          "dmg": 1,
+          "surge": "D6",
+          "surge_tags": [
+            "Light",
+            "Armoured"
+          ]
+        }
+      ],
+      "options": [
+        {
+          "name": "Super Stimpack",
+          "kind": "ability",
+          "side": "attack",
+          "effects": {
+            "precision": 2
+          },
+          "phase": "any",
+          "note": "1 CP. All of Nova's weapons gain Precision (2)."
+        }
+      ]
+    },
+    "Spec Ops Marauder": {
+      "tags": [
+        "Armoured",
+        "Biological",
+        "Ground"
+      ],
+      "armour": 4,
+      "evade": 6,
+      "hp": 5,
+      "shield": 0,
+      "models_default": 2,
+      "models_max": 2,
+      "size": 2,
+      "weapons": [
+        {
+          "name": "Quad K12",
+          "phase": "ranged",
+          "rng": 12,
+          "target": "Ground",
+          "roa": 3,
+          "hit": 3,
+          "dmg": 1,
+          "surge": "D3",
+          "surge_tags": [
+            "Armoured"
+          ],
+          "pierce_x": 2,
+          "pierce_tag": "Armoured",
+          "keywords": [
+            "Long Range 16\"",
+            "Pierce Armoured (2)"
+          ]
+        },
+        {
+          "name": "Strike",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 3,
+          "hit": 4,
+          "dmg": 1
+        }
+      ],
+      "options": [
+        {
+          "name": "Commando Stimpack",
+          "kind": "ability",
+          "side": "attack",
+          "effects": {
+            "precision": 2
+          },
+          "phase": "any",
+          "weapons": [
+            "Strike",
+            "Quad K12"
+          ],
+          "note": "1 CP. Precision (2) for Close Combat weapons and Quad K12."
+        },
+        {
+          "name": "Magrail Munitions",
+          "kind": "upgrade",
+          "side": "attack",
+          "effects": {
+            "precision": 3
+          },
+          "phase": "ranged",
+          "weapons": [
+            "Quad K12"
+          ],
+          "note": "Quad K12 Precision becomes (3) instead of (2). Precision never stacks (highest value wins), so this overrides Commando Stimpack's Precision (2)."
+        }
+      ]
+    },
+    "Raven": {
+      "tags": [
+        "Light",
+        "Mechanical",
+        "Flying"
+      ],
+      "armour": 5,
+      "evade": 6,
+      "hp": 8,
+      "shield": 0,
+      "models_default": 1,
+      "models_max": 1,
+      "size": 1,
+      "weapons": [
+        {
+          "name": "Railguns",
+          "phase": "ranged",
+          "rng": 12,
+          "target": "Ground",
+          "roa": 4,
+          "hit": 3,
+          "dmg": 1
+        }
+      ]
+    },
+    "Auto-Turret": {
+      "tags": [
+        "Armoured",
+        "Mechanical",
+        "Ground"
+      ],
+      "armour": 5,
+      "evade": null,
+      "hp": 3,
+      "shield": 0,
+      "models_default": 3,
+      "models_max": 3,
+      "size": 2,
+      "weapons": [
+        {
+          "name": "Gauss Cannon",
+          "phase": "ranged",
+          "rng": 8,
+          "target": "All",
+          "roa": 6,
+          "hit": 3,
+          "dmg": 1,
+          "keywords": [
+            "Pinpoint"
+          ]
+        },
+        {
+          "name": "Gauss Cannon + Explosive Shrapnel Shells (Raven upgrade)",
+          "phase": "ranged",
+          "rng": 8,
+          "target": "All",
+          "roa": 6,
+          "hit": 3,
+          "dmg": 1,
+          "surge": "D3",
+          "surge_plus": 1,
+          "surge_tags": [
+            "Light"
+          ],
+          "keywords": [
+            "Pinpoint"
+          ],
+          "upgrade": true
+        }
+      ]
+    },
+    "Holo Decoy": {
+      "tags": [
+        "Psionic",
+        "Ground"
+      ],
+      "armour": 6,
+      "evade": 6,
+      "hp": 1,
+      "shield": 0,
+      "models_default": 1,
+      "models_max": 1,
+      "size": 2,
+      "weapons": []
+    },
+    "Sabotage Drone": {
+      "tags": [
+        "Armoured",
+        "Mechanical",
+        "Ground"
+      ],
+      "armour": 6,
+      "evade": 6,
+      "hp": 3,
+      "shield": 0,
+      "models_default": 3,
+      "models_max": 3,
+      "size": 1,
+      "weapons": []
+    }
+  },
+  "Zerg": {
+    "Zergling": {
+      "tags": [
+        "Biological",
+        "Light",
+        "Ground"
+      ],
+      "armour": 6,
+      "evade": 4,
+      "hp": 1,
+      "shield": 0,
+      "models_default": 12,
+      "models_max": 18,
+      "size": 1,
+      "weapons": [
+        {
+          "name": "Claws",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 2,
+          "hit": 4,
+          "dmg": 1,
+          "surge": "D3",
+          "surge_tags": [
+            "Light"
+          ]
+        },
+        {
+          "name": "Shredding Claws (upgrade)",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 2,
+          "hit": 4,
+          "dmg": 1,
+          "surge": "D3",
+          "surge_tags": [
+            "Light",
+            "Armoured"
+          ],
+          "upgrade": true
+        }
+      ],
+      "options": [
+        {
+          "name": "Adrenal Glands",
+          "kind": "upgrade",
+          "side": "attack",
+          "effects": {
+            "precision": 2
+          },
+          "phase": "melee",
+          "weapons": [
+            "Claws"
+          ],
+          "note": "Claws and Shredding Claws gain Precision (2)."
+        }
+      ]
+    },
+    "Raptor (Zergling)": {
+      "tags": [
+        "Biological",
+        "Light",
+        "Ground"
+      ],
+      "armour": 6,
+      "evade": 4,
+      "hp": 1,
+      "shield": 0,
+      "models_default": 12,
+      "models_max": 18,
+      "size": 1,
+      "weapons": [
+        {
+          "name": "Claws",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 2,
+          "hit": 4,
+          "dmg": 1,
+          "surge": "D3",
+          "surge_tags": [
+            "Light"
+          ]
+        },
+        {
+          "name": "Shredding Claws (upgrade)",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 2,
+          "hit": 4,
+          "dmg": 1,
+          "surge": "D3",
+          "surge_tags": [
+            "Light",
+            "Armoured"
+          ],
+          "upgrade": true
+        }
+      ],
+      "options": [
+        {
+          "name": "Adrenal Glands",
+          "kind": "upgrade",
+          "side": "attack",
+          "effects": {
+            "precision": 2
+          },
+          "phase": "melee",
+          "weapons": [
+            "Claws"
+          ],
+          "note": "Claws and Shredding Claws gain Precision (2)."
+        }
+      ]
+    },
+    "Swarmling (Zergling)": {
+      "tags": [
+        "Biological",
+        "Light",
+        "Ground"
+      ],
+      "armour": 6,
+      "evade": 5,
+      "hp": 1,
+      "shield": 0,
+      "models_default": 12,
+      "models_max": 18,
+      "size": 1,
+      "weapons": [
+        {
+          "name": "Claws",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 2,
+          "hit": 5,
+          "dmg": 1
+        }
+      ]
+    },
+    "Kerrigan Swarm Raptor": {
+      "tags": [
+        "Biological",
+        "Light",
+        "Ground"
+      ],
+      "armour": 5,
+      "evade": 4,
+      "hp": 2,
+      "shield": 0,
+      "models_default": 6,
+      "models_max": 6,
+      "size": 1,
+      "weapons": [
+        {
+          "name": "Claws",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 2,
+          "hit": 3,
+          "dmg": 1,
+          "surge": "D6",
+          "surge_tags": [
+            "Light",
+            "Armoured"
+          ],
+          "keywords": [
+            "Instant"
+          ]
+        }
+      ]
+    },
+    "Hydralisk": {
+      "tags": [
+        "Biological",
+        "Light",
+        "Ground"
+      ],
+      "armour": 5,
+      "evade": 5,
+      "hp": 4,
+      "shield": 0,
+      "models_default": 4,
+      "models_max": 4,
+      "size": 2,
+      "weapons": [
+        {
+          "name": "Needle Spines",
+          "phase": "ranged",
+          "rng": 12,
+          "target": "All",
+          "roa": 3,
+          "hit": 3,
+          "dmg": 2,
+          "surge": "D3",
+          "surge_plus": 1,
+          "surge_tags": [
+            "Light",
+            "Armoured"
+          ],
+          "keywords": [
+            "Grooved Spines upgrade: Long Range 16\""
+          ]
+        },
+        {
+          "name": "Scythe",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 2,
+          "hit": 4,
+          "dmg": 1
+        }
+      ],
+      "options": [
+        {
+          "name": "Ancillary Carapace",
+          "kind": "upgrade",
+          "side": "defend",
+          "effects": {
+            "tough": 1
+          },
+          "phase": "any",
+          "note": "Tough (1) on the first Armour roll of each Activation."
+        },
+        {
+          "name": "Lurking",
+          "kind": "upgrade",
+          "side": "defend",
+          "effects": {
+            "grant_evade_roll": true
+          },
+          "phase": "ranged",
+          "situational": true,
+          "note": "If Stationary, eligible for an Evade roll against the first ranged attack against it this Round. +1 Evade modifier on Creep (use the Evade modifier box)."
+        }
+      ]
+    },
+    "Roach": {
+      "tags": [
+        "Armoured",
+        "Biological",
+        "Ground"
+      ],
+      "armour": 3,
+      "evade": 5,
+      "hp": 4,
+      "shield": 0,
+      "models_default": 3,
+      "models_max": 3,
+      "size": 2,
+      "weapons": [
+        {
+          "name": "Acid Saliva",
+          "phase": "ranged",
+          "rng": 8,
+          "target": "Ground",
+          "roa": 3,
+          "hit": 3,
+          "dmg": 1
+        },
+        {
+          "name": "Claws",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 2,
+          "hit": 4,
+          "dmg": 1
+        }
+      ],
+      "options": [
+        {
+          "name": "Hydriodic Bile",
+          "kind": "upgrade",
+          "side": "attack",
+          "effects": {
+            "grant_surge_die": "D3",
+            "grant_surge_plus": 1,
+            "grant_surge_tags": [
+              "Light"
+            ]
+          },
+          "phase": "ranged",
+          "weapons": [
+            "Acid Saliva"
+          ],
+          "note": "Acid Saliva gains Surge Type Light and S Dice D3+1."
+        }
+      ]
+    },
+    "Corpser (Roach)": {
+      "tags": [
+        "Armoured",
+        "Biological",
+        "Ground"
+      ],
+      "armour": 3,
+      "evade": 5,
+      "hp": 4,
+      "shield": 0,
+      "models_default": 3,
+      "models_max": 3,
+      "size": 2,
+      "weapons": [
+        {
+          "name": "Acid Saliva",
+          "phase": "ranged",
+          "rng": 8,
+          "target": "Ground",
+          "roa": 2,
+          "hit": 3,
+          "dmg": 1
+        },
+        {
+          "name": "Claws",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 3,
+          "hit": 4,
+          "dmg": 1,
+          "surge": "D3",
+          "surge_plus": 1,
+          "surge_tags": [
+            "Light"
+          ]
+        }
+      ],
+      "options": [
+        {
+          "name": "Hydriodic Bile",
+          "kind": "upgrade",
+          "side": "attack",
+          "effects": {
+            "grant_surge_die": "D3",
+            "grant_surge_plus": 1,
+            "grant_surge_tags": [
+              "Light"
+            ]
+          },
+          "phase": "ranged",
+          "weapons": [
+            "Acid Saliva"
+          ],
+          "note": "Acid Saliva gains Surge Type Light and S Dice D3+1."
+        }
+      ]
+    },
+    "Vile (Roach)": {
+      "tags": [
+        "Armoured",
+        "Biological",
+        "Ground"
+      ],
+      "armour": 3,
+      "evade": 5,
+      "hp": 4,
+      "shield": 0,
+      "models_default": 3,
+      "models_max": 3,
+      "size": 2,
+      "weapons": [
+        {
+          "name": "Acid Saliva",
+          "phase": "ranged",
+          "rng": 8,
+          "target": "Ground",
+          "roa": 4,
+          "hit": 3,
+          "dmg": 1
+        },
+        {
+          "name": "Vile Claws",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 2,
+          "hit": 4,
+          "dmg": 1
+        }
+      ],
+      "options": [
+        {
+          "name": "Hydriodic Bile",
+          "kind": "upgrade",
+          "side": "attack",
+          "effects": {
+            "grant_surge_die": "D3",
+            "grant_surge_plus": 1,
+            "grant_surge_tags": [
+              "Light"
+            ]
+          },
+          "phase": "ranged",
+          "weapons": [
+            "Acid Saliva"
+          ],
+          "note": "Acid Saliva gains Surge Type Light and S Dice D3+1."
+        }
+      ]
+    },
+    "Roachling": {
+      "tags": [
+        "Biological",
+        "Light",
+        "Ground"
+      ],
+      "armour": 6,
+      "evade": 6,
+      "hp": 1,
+      "shield": 0,
+      "models_default": 3,
+      "models_max": 3,
+      "size": 1,
+      "weapons": [
+        {
+          "name": "Claws",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 2,
+          "hit": 4,
+          "dmg": 1
+        }
+      ]
+    },
+    "Queen": {
+      "tags": [
+        "Biological",
+        "Psionic",
+        "Ground"
+      ],
+      "armour": 4,
+      "evade": null,
+      "hp": 9,
+      "shield": 0,
+      "models_default": 1,
+      "models_max": 1,
+      "size": 3,
+      "weapons": [
+        {
+          "name": "Talons (ranged)",
+          "phase": "ranged",
+          "rng": 6,
+          "target": "Ground",
+          "roa": 4,
+          "hit": 4,
+          "dmg": 2,
+          "surge": "D3",
+          "surge_tags": [
+            "Light"
+          ]
+        },
+        {
+          "name": "Acid Spines",
+          "phase": "ranged",
+          "rng": 12,
+          "target": "Flying",
+          "roa": 4,
+          "hit": 4,
+          "dmg": 2,
+          "surge": "D3",
+          "surge_tags": [
+            "Light",
+            "Armoured"
+          ]
+        },
+        {
+          "name": "Talons (melee)",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 3,
+          "hit": 4,
+          "dmg": 1
+        }
+      ]
+    },
+    "Kerrigan": {
+      "tags": [
+        "Biological",
+        "Psionic",
+        "Ground"
+      ],
+      "armour": 5,
+      "evade": 6,
+      "hp": 9,
+      "shield": 0,
+      "models_default": 1,
+      "models_max": 1,
+      "size": 2,
+      "weapons": [
+        {
+          "name": "Energy Blast",
+          "phase": "ranged",
+          "rng": 8,
+          "target": "All",
+          "roa": 5,
+          "hit": 3,
+          "dmg": 1,
+          "surge": "D3",
+          "surge_tags": [
+            "Light",
+            "Armoured"
+          ]
+        },
+        {
+          "name": "Blades",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 6,
+          "hit": 4,
+          "dmg": 2,
+          "critical": 2,
+          "keywords": [
+            "Critical Hit (2)"
+          ]
+        }
+      ],
+      "options": [
+        {
+          "name": "Mutating Carapace",
+          "kind": "ability",
+          "side": "defend",
+          "effects": {
+            "evade_mod": 2
+          },
+          "phase": "any",
+          "situational": true,
+          "note": "1 BM. +2 Evade modifier against the selected enemy unit's attacks. Tick 'Evade roll eligible' if she may evade."
+        }
+      ]
+    },
+    "Omega Worm": {
+      "tags": [
+        "Armoured",
+        "Biological",
+        "Ground"
+      ],
+      "armour": null,
+      "evade": 5,
+      "hp": 10,
+      "shield": 0,
+      "models_default": 1,
+      "models_max": 1,
+      "size": 3,
+      "weapons": []
+    },
+    "Ravager": {
+      "tags": [
+        "Armoured",
+        "Biological",
+        "Ground"
+      ],
+      "armour": 5,
+      "evade": 5,
+      "hp": 9,
+      "shield": 0,
+      "models_default": 1,
+      "models_max": 2,
+      "size": 3,
+      "weapons": [
+        {
+          "name": "Plasma Discharge",
+          "phase": "ranged",
+          "rng": 12,
+          "target": "Ground",
+          "roa": 4,
+          "hit": 3,
+          "dmg": 1,
+          "surge": "D3",
+          "surge_plus": 1,
+          "surge_tags": [
+            "Light"
+          ]
+        },
+        {
+          "name": "Claws",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 2,
+          "hit": 4,
+          "dmg": 1
+        }
+      ]
+    },
+    "Zagara": {
+      "tags": [
+        "Biological",
+        "Psionic",
+        "Ground"
+      ],
+      "armour": 4,
+      "evade": 6,
+      "hp": 10,
+      "shield": 0,
+      "models_default": 1,
+      "models_max": 1,
+      "size": 3,
+      "weapons": [
+        {
+          "name": "Zagara's Acid Spines",
+          "phase": "ranged",
+          "rng": 14,
+          "target": "Flying",
+          "roa": 8,
+          "hit": 3,
+          "dmg": 1,
+          "surge": "D3",
+          "surge_tags": [
+            "Light",
+            "Armoured"
+          ]
+        },
+        {
+          "name": "Zagara's Talons (ranged)",
+          "phase": "ranged",
+          "rng": 8,
+          "target": "Ground",
+          "roa": 4,
+          "hit": 3,
+          "dmg": 2,
+          "surge": "D3",
+          "surge_tags": [
+            "Light",
+            "Armoured"
+          ]
+        },
+        {
+          "name": "Talons",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 4,
+          "hit": 3,
+          "dmg": 1
+        }
+      ]
+    },
+    "Defiler": {
+      "tags": [
+        "Biological",
+        "Light",
+        "Psionic",
+        "Ground"
+      ],
+      "armour": 5,
+      "evade": 5,
+      "hp": 8,
+      "shield": 0,
+      "models_default": 1,
+      "models_max": 1,
+      "size": 3,
+      "weapons": [
+        {
+          "name": "Claws",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 4,
+          "hit": 3,
+          "dmg": 1
+        }
+      ]
+    },
+    "Vileling (Zergling)": {
+      "tags": [
+        "Biological",
+        "Light",
+        "Ground"
+      ],
+      "armour": 6,
+      "evade": 5,
+      "hp": 1,
+      "shield": 0,
+      "models_default": 12,
+      "models_max": 18,
+      "size": 1,
+      "weapons": [
+        {
+          "name": "Claws",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 2,
+          "hit": 5,
+          "dmg": 1
+        }
+      ]
+    },
+    "Bile Launcher": {
+      "tags": [
+        "Armoured",
+        "Biological",
+        "Ground"
+      ],
+      "armour": 4,
+      "evade": null,
+      "hp": 10,
+      "shield": 0,
+      "models_default": 1,
+      "models_max": 1,
+      "size": 3,
+      "weapons": [
+        {
+          "name": "Bile Bomb",
+          "phase": "ranged",
+          "rng": 12,
+          "target": "Ground",
+          "roa": 6,
+          "hit": 3,
+          "dmg": 1,
+          "surge": "D3",
+          "surge_tags": [
+            "Light",
+            "Armoured"
+          ],
+          "pierce_x": 2,
+          "pierce_tag": "Armoured",
+          "keywords": [
+            "Pierce Armoured (2)",
+            "Pinpoint"
+          ]
+        }
+      ]
+    }
+  },
+  "Protoss": {
+    "Zealot": {
+      "tags": [
+        "Biological",
+        "Light",
+        "Ground"
+      ],
+      "armour": 5,
+      "evade": 5,
+      "hp": 4,
+      "shield": 3,
+      "models_default": 3,
+      "models_max": 3,
+      "size": 2,
+      "weapons": [
+        {
+          "name": "Psi Blades",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 4,
+          "hit": 3,
+          "dmg": 1,
+          "surge": "D3",
+          "surge_tags": [
+            "Light"
+          ]
+        }
+      ],
+      "options": [
+        {
+          "name": "We Stand As One",
+          "kind": "passive",
+          "side": "attack",
+          "effects": {
+            "precision": 2
+          },
+          "phase": "melee",
+          "situational": true,
+          "note": "Close Combat weapon gains Precision (2) when the target is Engaged with another friendly unit."
+        }
+      ]
+    },
+    "Khalai Praetor Guard": {
+      "tags": [
+        "Biological",
+        "Light",
+        "Ground"
+      ],
+      "armour": 5,
+      "evade": 5,
+      "hp": 4,
+      "shield": 3,
+      "models_default": 3,
+      "models_max": 3,
+      "size": 2,
+      "weapons": [
+        {
+          "name": "Psi Blades",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 4,
+          "hit": 3,
+          "dmg": 1,
+          "surge": "D3",
+          "surge_tags": [
+            "Light"
+          ]
+        }
+      ],
+      "options": [
+        {
+          "name": "Titan Killers",
+          "kind": "passive",
+          "side": "attack",
+          "effects": {
+            "dmg_mod": 1
+          },
+          "phase": "melee",
+          "when": {
+            "target_size_min": 3
+          },
+          "note": "Close Combat weapon Damage is 2 instead of 1 against Size 3 or larger targets. Applied automatically whenever the defender's Size is 3 or more.",
+          "auto": true
+        },
+        {
+          "name": "Precognition",
+          "kind": "passive",
+          "side": "defend",
+          "effects": {
+            "grant_evade_roll": true
+          },
+          "phase": "any",
+          "note": "Can make Evade rolls against attacks targeting it."
+        }
+      ]
+    },
+    "Adept": {
+      "tags": [
+        "Biological",
+        "Light",
+        "Ground"
+      ],
+      "armour": 5,
+      "evade": 5,
+      "hp": 3,
+      "shield": 2,
+      "models_default": 4,
+      "models_max": 4,
+      "size": 2,
+      "weapons": [
+        {
+          "name": "Glaive Cannon",
+          "phase": "ranged",
+          "rng": 8,
+          "target": "All",
+          "roa": 2,
+          "hit": 3,
+          "dmg": 1,
+          "surge": "D3",
+          "surge_plus": 1,
+          "surge_tags": [
+            "Light"
+          ],
+          "anti_evade": 1,
+          "keywords": [
+            "Anti-Evade (1)"
+          ]
+        },
+        {
+          "name": "Glaive Strike",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 1,
+          "hit": 4,
+          "dmg": 1
+        }
+      ],
+      "options": [
+        {
+          "name": "Resonating Glaives",
+          "kind": "upgrade",
+          "side": "attack",
+          "effects": {
+            "bonus_dice_per_model": 1
+          },
+          "phase": "ranged",
+          "weapons": [
+            "Glaive Cannon"
+          ],
+          "note": "1 PE. Glaive Cannon gains BUFF RoA (1)."
+        },
+        {
+          "name": "Guidance",
+          "kind": "upgrade",
+          "side": "attack",
+          "effects": {
+            "anti_evade": 2
+          },
+          "phase": "ranged",
+          "weapons": [
+            "Glaive Cannon"
+          ],
+          "note": "Glaive Cannon gains Anti-Evade (2)."
+        }
+      ]
+    },
+    "Stalker": {
+      "tags": [
+        "Armoured",
+        "Mechanical",
+        "Ground"
+      ],
+      "armour": 4,
+      "evade": 6,
+      "hp": 6,
+      "shield": 3,
+      "models_default": 2,
+      "models_max": 2,
+      "size": 3,
+      "weapons": [
+        {
+          "name": "Particle Disruptors",
+          "phase": "ranged",
+          "rng": 12,
+          "target": "All",
+          "roa": 4,
+          "hit": 3,
+          "dmg": 2,
+          "surge": "D3",
+          "surge_tags": [
+            "Armoured"
+          ]
+        }
+      ]
+    },
+    "Sentry": {
+      "tags": [
+        "Light",
+        "Mechanical",
+        "Psionic",
+        "Ground"
+      ],
+      "armour": 5,
+      "evade": 6,
+      "hp": 4,
+      "shield": 2,
+      "models_default": 2,
+      "models_max": 2,
+      "size": 1,
+      "weapons": [
+        {
+          "name": "Disruption Beam",
+          "phase": "ranged",
+          "rng": 8,
+          "target": "All",
+          "roa": 2,
+          "hit": 2,
+          "dmg": 1,
+          "keywords": [
+            "Instant"
+          ]
+        },
+        {
+          "name": "Beam",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 2,
+          "hit": 3,
+          "dmg": 1
+        }
+      ]
+    },
+    "Artanis": {
+      "tags": [
+        "Biological",
+        "Psionic",
+        "Ground"
+      ],
+      "armour": 4,
+      "evade": 5,
+      "hp": 8,
+      "shield": 4,
+      "models_default": 1,
+      "models_max": 1,
+      "size": 2,
+      "weapons": [
+        {
+          "name": "Twilight Blades Strike",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 2,
+          "hit": 2,
+          "dmg": 3,
+          "surge": "D3",
+          "surge_tags": [
+            "Armoured"
+          ]
+        },
+        {
+          "name": "Twilight Blades Sweep",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 6,
+          "hit": 2,
+          "dmg": 1,
+          "surge": "D3",
+          "surge_plus": 1,
+          "surge_tags": [
+            "Light"
+          ]
+        }
+      ]
+    },
+    "Pylon": {
+      "tags": [
+        "Armoured",
+        "Ground"
+      ],
+      "armour": 5,
+      "evade": null,
+      "hp": 8,
+      "shield": 2,
+      "models_default": 1,
+      "models_max": 1,
+      "size": 3,
+      "weapons": []
+    },
+    "Immortal": {
+      "tags": [
+        "Armoured",
+        "Mechanical",
+        "Ground"
+      ],
+      "armour": 4,
+      "evade": null,
+      "hp": 8,
+      "shield": 6,
+      "models_default": 1,
+      "models_max": 1,
+      "size": 3,
+      "weapons": [
+        {
+          "name": "Left Photon Disruptor",
+          "phase": "ranged",
+          "rng": 12,
+          "target": "Ground",
+          "roa": 4,
+          "hit": 3,
+          "dmg": 2,
+          "surge": "D3",
+          "surge_tags": [
+            "Armoured"
+          ],
+          "keywords": [
+            "Concentrated Fire (1)",
+            "Long Range 16\""
+          ]
+        },
+        {
+          "name": "Right Photon Disruptor",
+          "phase": "ranged",
+          "rng": 12,
+          "target": "Ground",
+          "roa": 4,
+          "hit": 3,
+          "dmg": 2,
+          "surge": "D3",
+          "surge_tags": [
+            "Armoured"
+          ],
+          "keywords": [
+            "Concentrated Fire (1)",
+            "Long Range 16\"",
+            "Sidearm"
+          ]
+        },
+        {
+          "name": "Photon Disruptor (upgrade)",
+          "phase": "ranged",
+          "rng": 12,
+          "target": "Ground",
+          "roa": 4,
+          "hit": 3,
+          "dmg": 1,
+          "surge": "D3",
+          "surge_tags": [
+            "Armoured"
+          ],
+          "pierce_x": 3,
+          "pierce_tag": "Armoured",
+          "keywords": [
+            "Pierce Armoured (3)"
+          ],
+          "upgrade": true
+        },
+        {
+          "name": "Stomp",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 3,
+          "hit": 3,
+          "dmg": 1
+        }
+      ],
+      "options": [
+        {
+          "name": "Unyielding Fury",
+          "kind": "passive",
+          "side": "attack",
+          "effects": {
+            "critical": 1
+          },
+          "phase": "ranged",
+          "situational": true,
+          "note": "Ranged weapons gain Critical Hit (1) against enemies within 3 inches of a Mission Marker this unit is also within 3 inches of."
+        },
+        {
+          "name": "For the Ancients",
+          "kind": "passive",
+          "side": "attack",
+          "effects": {
+            "precision": 1
+          },
+          "phase": "ranged",
+          "situational": true,
+          "note": "Ranged attacks gain Precision (1) against targets more than 8 inches away."
+        },
+        {
+          "name": "Shield Overcharge",
+          "kind": "ability",
+          "side": "defend",
+          "effects": {
+            "tough": 2
+          },
+          "phase": "any",
+          "situational": true,
+          "note": "1 PE. If Shielded, gains Tough (2) before an Armour roll."
+        }
+      ]
+    },
+    "Zeratul": {
+      "tags": [
+        "Biological",
+        "Psionic",
+        "Ground"
+      ],
+      "armour": 5,
+      "evade": 5,
+      "hp": 5,
+      "shield": 3,
+      "models_default": 1,
+      "models_max": 1,
+      "size": 2,
+      "weapons": [
+        {
+          "name": "Master Warp Blade",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 4,
+          "hit": 3,
+          "dmg": 2,
+          "surge": "D3",
+          "surge_tags": [
+            "Light",
+            "Armoured"
+          ],
+          "keywords": [
+            "Instant?"
+          ]
+        }
+      ],
+      "options": [
+        {
+          "name": "Sentenced to Death",
+          "kind": "ability",
+          "side": "attack",
+          "effects": {
+            "critical": 2
+          },
+          "phase": "melee",
+          "note": "1 PE. Close Combat weapon gains Critical Hit (2) against the selected enemy unit."
+        },
+        {
+          "name": "Prophetic Vision",
+          "kind": "ability",
+          "side": "defend",
+          "effects": {
+            "armour_set": 4
+          },
+          "phase": "any",
+          "situational": true,
+          "note": "1 PE. Armour is treated as 4+ against that attack."
+        }
+      ]
+    },
+    "Nerazim Watchers (Adept)": {
+      "tags": [
+        "Biological",
+        "Light",
+        "Ground"
+      ],
+      "armour": 5,
+      "evade": 5,
+      "hp": 3,
+      "shield": 2,
+      "models_default": 3,
+      "models_max": 4,
+      "size": 2,
+      "weapons": [
+        {
+          "name": "Glaive Cannon",
+          "phase": "ranged",
+          "rng": 8,
+          "target": "All",
+          "roa": 3,
+          "hit": 3,
+          "dmg": 1,
+          "surge": "D3",
+          "surge_plus": 1,
+          "surge_tags": [
+            "Light"
+          ],
+          "anti_evade": 1,
+          "keywords": [
+            "Anti-Evade (1)",
+            "Pinpoint"
+          ]
+        },
+        {
+          "name": "Strike",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 1,
+          "hit": 5,
+          "dmg": 1
+        }
+      ]
+    },
+    "Tassadar": {
+      "tags": [
+        "Biological",
+        "Psionic",
+        "Ground"
+      ],
+      "armour": 5,
+      "evade": 5,
+      "hp": 6,
+      "shield": 3,
+      "models_default": 1,
+      "models_max": 1,
+      "size": 2,
+      "weapons": [
+        {
+          "name": "Resonance Beam",
+          "phase": "ranged",
+          "rng": 12,
+          "target": "All",
+          "roa": 6,
+          "hit": 3,
+          "dmg": 1,
+          "surge": "D3",
+          "surge_tags": [
+            "Armoured"
+          ],
+          "keywords": [
+            "Instant"
+          ]
+        },
+        {
+          "name": "Strike",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 6,
+          "hit": 4,
+          "dmg": 1
+        }
+      ]
+    },
+    "Twilight Templar (High Templar)": {
+      "tags": [
+        "Biological",
+        "Light",
+        "Psionic",
+        "Ground"
+      ],
+      "armour": 5,
+      "evade": 6,
+      "hp": 3,
+      "shield": 3,
+      "models_default": 2,
+      "models_max": 2,
+      "size": 2,
+      "weapons": [
+        {
+          "name": "Psi Blast",
+          "phase": "ranged",
+          "rng": 8,
+          "target": "All",
+          "roa": 2,
+          "hit": 3,
+          "dmg": 2,
+          "surge": "D3",
+          "surge_tags": [
+            "Light"
+          ],
+          "keywords": [
+            "Instant"
+          ]
+        },
+        {
+          "name": "Strike",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 1,
+          "hit": 4,
+          "dmg": 1
+        }
+      ]
+    },
+    "High Templar": {
+      "tags": [
+        "Biological",
+        "Light",
+        "Psionic",
+        "Ground"
+      ],
+      "armour": 6,
+      "evade": 5,
+      "hp": 3,
+      "shield": 3,
+      "models_default": 2,
+      "models_max": 4,
+      "size": 2,
+      "weapons": [
+        {
+          "name": "Psi Blast",
+          "phase": "ranged",
+          "rng": 8,
+          "target": "All",
+          "roa": 1,
+          "hit": 3,
+          "dmg": 2,
+          "surge": "D3",
+          "surge_tags": [
+            "Light"
+          ],
+          "keywords": [
+            "Instant"
+          ]
+        },
+        {
+          "name": "Strike",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 1,
+          "hit": 4,
+          "dmg": 1
+        }
+      ]
+    }
+  }
+}

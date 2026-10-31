@@ -1,0 +1,342 @@
+{
+  "_readme": "Cards/abilities that modify an attack. 'phase': ranged | melee | any (a card is skipped when it does not match the selected weapon). Effects (attacker): hit_mod, bonus_dice_per_model, bonus_dice_flat, dmg_mod, surge_bonus, set_surge_die, grant_surge_die + grant_surge_plus + grant_surge_tags, reroll_hits, precision, critical, anti_evade, pierce_x+pierce_tag. Effects (defender): armour_mod, evade_mod, grant_evade (target number), reroll_armour, tough, dodge, damage_reduction (per die), total_reduction (off total damage), attack_pool_reduction, shield_bonus, hp_bonus, ignore_surge. +1 mod = easier. Text transcribed from the official card sheets; some wording was garbled in the source (see 'note'). Unit-specific passives, upgrades and abilities now live on each unit in units.json ('options'). Each card has a 'faction' (Terran | Zerg | Protoss | Generic); the app only offers the selected faction's cards plus Generic ones. Optional 'when': {\"own_size\": N} makes a card apply only to a unit of exactly that Size (the attacker for attacker cards, the defender for defender cards).",
+  "attacker": {
+    "Terran: Engineering Bay - Infantry Weapons": {
+      "faction": "Terran",
+      "phase": "ranged",
+      "effects": {
+        "critical": 1
+      },
+      "note": "Biological unit's first ranged weapon gains Critical Hit (1)."
+    },
+    "Terran: Armory - Vehicle Weapons": {
+      "faction": "Terran",
+      "phase": "ranged",
+      "effects": {
+        "critical": 1
+      },
+      "note": "Mechanical unit's first ranged weapon gains Critical Hit (1)."
+    },
+    "Terran: Barracks (Tech Lab) - Let's Have a Blast!": {
+      "faction": "Terran",
+      "phase": "ranged",
+      "effects": {
+        "anti_evade": 1
+      },
+      "note": "Biological unit's first ranged weapon gains Anti-Evade (1). CP cost unclear in source."
+    },
+    "Terran: Raynor Orders - Critical Hit (2)": {
+      "faction": "Terran",
+      "phase": "any",
+      "effects": {
+        "critical": 2
+      },
+      "note": "Jim Raynor Orders on a friendly Biological unit within 8 inches. Cost/wording partly garbled in source."
+    },
+    "Zerg: Hydralisk Den - Missile Attacks (Precision 1)": {
+      "faction": "Zerg",
+      "phase": "ranged",
+      "effects": {
+        "precision": 1
+      },
+      "note": "First ranged weapon used."
+    },
+    "Zerg: Spawning Pool - Feral Rage (Precision 2)": {
+      "faction": "Zerg",
+      "phase": "melee",
+      "effects": {
+        "precision": 2
+      },
+      "note": "First close combat weapon used."
+    },
+    "Zerg: Wild Mutation (Precision 1, on Creep)": {
+      "faction": "Zerg",
+      "phase": "any",
+      "effects": {
+        "precision": 1
+      },
+      "note": "Kerrigan's Swarm, only while the unit is on Creep."
+    },
+    "Zerg: Vile Debilitating Saliva (Hit -1 debuff on attacker)": {
+      "faction": "Zerg",
+      "phase": "ranged",
+      "effects": {
+        "hit_mod": -1
+      },
+      "note": "DEBUFF Hit (1) on the attacking unit's ranged weapons."
+    },
+    "Protoss: Gateway - Quick Strikes (Precision 2)": {
+      "faction": "Protoss",
+      "phase": "melee",
+      "effects": {
+        "precision": 2
+      },
+      "note": "First close combat weapon in the Combat Phase."
+    },
+    "Protoss: Forge - Ground Weapons (Critical Hit 1)": {
+      "faction": "Protoss",
+      "phase": "ranged",
+      "effects": {
+        "critical": 1
+      },
+      "note": "First ranged weapon."
+    },
+    "Terran: Factory - Pound 'Em Flat! (Precision 2)": {
+      "faction": "Terran",
+      "phase": "ranged",
+      "effects": {
+        "precision": 2
+      },
+      "note": "Mechanical unit that is Stationary; first ranged weapon."
+    },
+    "Terran: Mark for Death (Critical Hit 1 + Precision 1)": {
+      "faction": "Terran",
+      "phase": "any",
+      "effects": {
+        "critical": 1,
+        "precision": 1
+      },
+      "note": "First weapon used against the marked enemy unit."
+    },
+    "Terran: Holo Decoy Lethal Hologram (Precision 1)": {
+      "faction": "Terran",
+      "phase": "any",
+      "effects": {
+        "precision": 1
+      },
+      "note": "Friendly weapons within 4 inches. Wording unclear in source."
+    },
+    "Zerg: Scourge Queen (Precision 4)": {
+      "faction": "Zerg",
+      "phase": "melee",
+      "effects": {
+        "precision": 4
+      },
+      "note": "Close Combat weapons while outnumbering engaged enemy models (also gains Instant)."
+    },
+    "Protoss: Nerazim - Might of the Nerazim (Critical Hit 2)": {
+      "faction": "Protoss",
+      "phase": "any",
+      "effects": {
+        "critical": 2
+      },
+      "note": "When a friendly unit loses Hidden; first weapon."
+    },
+    "Generic: +1 to Hit": {
+      "faction": "Generic",
+      "phase": "any",
+      "effects": {
+        "hit_mod": 1
+      }
+    },
+    "Generic: -1 to Hit (debuff)": {
+      "faction": "Generic",
+      "phase": "any",
+      "effects": {
+        "hit_mod": -1
+      }
+    },
+    "Generic: Re-roll failed hits": {
+      "faction": "Generic",
+      "phase": "any",
+      "effects": {
+        "reroll_hits": "misses"
+      }
+    },
+    "Zerg: Zagara - Critical Hit (1) for Size 2 units": {
+      "faction": "Zerg",
+      "phase": "any",
+      "effects": {
+        "critical": 1
+      },
+      "when": {
+        "own_size": 2
+      },
+      "note": "Zagara buff: a friendly Size 2 unit gains Critical Hit. Critical Hit (1) is assumed; edit the value in cards.json if your card says otherwise."
+    }
+  },
+  "defender": {
+    "Terran: Engineering Bay - Infantry Armor (Tough 1)": {
+      "faction": "Terran",
+      "phase": "any",
+      "effects": {
+        "tough": 1
+      },
+      "note": "Friendly Biological unit, before its Armour roll."
+    },
+    "Terran: Armory - Vehicle Plating (Tough 1)": {
+      "faction": "Terran",
+      "phase": "any",
+      "effects": {
+        "tough": 1
+      },
+      "note": "Friendly Mechanical unit, before its Armour roll."
+    },
+    "Terran: Medic Life Support (-1 total damage per Medic in range)": {
+      "faction": "Terran",
+      "phase": "any",
+      "effects": {
+        "total_reduction": 1
+      },
+      "note": "-1 per Medic model within 4 inches. Use Custom modifiers for more Medics."
+    },
+    "Zerg: Evolution Chamber - Carapace (Tough 1)": {
+      "faction": "Zerg",
+      "phase": "any",
+      "effects": {
+        "tough": 1
+      }
+    },
+    "Zerg: Brood Instinct (+1 Evade modifier)": {
+      "faction": "Zerg",
+      "phase": "any",
+      "effects": {
+        "evade_mod": 1
+      },
+      "note": "Only matters if the unit may Evade."
+    },
+    "Zerg: Queen Transfusion (-2 total damage)": {
+      "faction": "Zerg",
+      "phase": "any",
+      "effects": {
+        "total_reduction": 2
+      },
+      "note": "Friendly Biological unit within 4 inches."
+    },
+    "Protoss: Forge - Ground Armor (Tough 1)": {
+      "faction": "Protoss",
+      "phase": "any",
+      "effects": {
+        "tough": 1
+      }
+    },
+    "Protoss: Power Field - Guardian Shell (Dodge 2)": {
+      "faction": "Protoss",
+      "phase": "any",
+      "effects": {
+        "dodge": 2
+      },
+      "note": "Ground unit, for an Armour roll."
+    },
+    "Protoss: Sentry Guardian Shield (-1 attack die)": {
+      "faction": "Protoss",
+      "phase": "ranged",
+      "effects": {
+        "attack_pool_reduction": 1
+      },
+      "note": "Ranged attacks against friendly units within 4 inches have one fewer die."
+    },
+    "Protoss: Zealot Zealous Round (-2 damage)": {
+      "faction": "Protoss",
+      "phase": "any",
+      "effects": {
+        "total_reduction": 2
+      },
+      "note": "Counts as Activated."
+    },
+    "Terran: Armory - Crystalline Alloy (Dodge 2)": {
+      "faction": "Terran",
+      "phase": "any",
+      "effects": {
+        "dodge": 2
+      },
+      "note": "Friendly Mechanical unit, next Armour roll."
+    },
+    "Terran: Raven Anti-Armour Missile (Armour -1 debuff)": {
+      "faction": "Terran",
+      "phase": "any",
+      "effects": {
+        "armour_mod": -1
+      },
+      "note": "Enemy within 12 inches gains DEBUFF Armour (1)."
+    },
+    "Zerg: Ravager Potent Bile (Armour -1 debuff)": {
+      "faction": "Zerg",
+      "phase": "any",
+      "effects": {
+        "armour_mod": -1
+      },
+      "note": "Wording partly garbled in source."
+    },
+    "Zerg: Reactive Tissue (Dodge 1, on Creep)": {
+      "faction": "Zerg",
+      "phase": "any",
+      "effects": {
+        "dodge": 1
+      },
+      "note": "Friendly Zerg unit on Creep."
+    },
+    "Zerg: Zagara Transfusion (-2 total damage)": {
+      "faction": "Zerg",
+      "phase": "any",
+      "effects": {
+        "total_reduction": 2
+      },
+      "note": "Friendly Biological unit within 4 inches."
+    },
+    "Protoss: Robotics Facility - Plasma Shields (Tough 1 + Dodge 1)": {
+      "faction": "Protoss",
+      "phase": "any",
+      "effects": {
+        "tough": 1,
+        "dodge": 1
+      },
+      "note": "Shielded Mechanical Ground unit."
+    },
+    "Protoss: High Templar Farsight (Evade 5+)": {
+      "faction": "Protoss",
+      "phase": "any",
+      "effects": {
+        "grant_evade": 5
+      },
+      "note": "Grants an Evade roll against attacks until End of Round."
+    },
+    "Generic: +1 Armour": {
+      "faction": "Generic",
+      "phase": "any",
+      "effects": {
+        "armour_mod": 1
+      }
+    },
+    "Generic: -1 Armour (debuff)": {
+      "faction": "Generic",
+      "phase": "any",
+      "effects": {
+        "armour_mod": -1
+      }
+    },
+    "Generic: Re-roll failed armour": {
+      "faction": "Generic",
+      "phase": "any",
+      "effects": {
+        "reroll_armour": "fails"
+      }
+    },
+    "Generic: Immune to Surge": {
+      "faction": "Generic",
+      "phase": "any",
+      "effects": {
+        "ignore_surge": true
+      }
+    },
+    "Zerg: Zagara - Tough (1) for Size 3 units": {
+      "faction": "Zerg",
+      "phase": "any",
+      "effects": {
+        "tough": 1
+      },
+      "when": {
+        "own_size": 3
+      },
+      "note": "Zagara buff: a friendly Size 3 unit gains Tough (1)."
+    },
+    "Zerg: Malignant Creep (Dodge 1, on Creep)": {
+      "faction": "Zerg",
+      "phase": "any",
+      "effects": {
+        "dodge": 1
+      },
+      "note": "Friendly Zerg unit on Creep gains Dodge (1). Dodge never stacks, so ticking it together with Reactive Tissue changes nothing."
+    }
+  }
+}
