@@ -426,7 +426,7 @@
           "name": "Scatter Missiles (upgrade)",
           "phase": "ranged",
           "rng": 18,
-          "target": "Flying",
+          "target": "Ground",
           "roa": 6,
           "hit": 5,
           "dmg": 1,
@@ -446,7 +446,7 @@
           "name": "Haywire Missiles (upgrade)",
           "phase": "ranged",
           "rng": 12,
-          "target": "Flying",
+          "target": "Ground",
           "roa": 3,
           "hit": 3,
           "dmg": 1,
@@ -503,7 +503,7 @@
           "weapons": [
             "Autocannon"
           ],
-          "note": "1 CP. Autocannon gains Surge Light + Armoured with S Dice D3+1. Trigger wording is garbled in the source."
+          "note": "1 CP. Autocannon gains Surge Light + Armoured with S Dice D3+1."
         }
       ]
     },
