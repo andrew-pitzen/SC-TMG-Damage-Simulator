@@ -35,7 +35,7 @@ from typing import Dict, List
 
 import numpy as np
 
-N_DEFAULT = 20_000
+N_DEFAULT = 100_000
 
 # Keywords never stack: use the highest value from weapon / cards.
 KEYWORD_MAX = {"precision", "critical", "anti_evade", "pierce_x", "tough", "dodge", "dmg_set"}
