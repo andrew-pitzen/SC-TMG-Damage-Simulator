@@ -14,7 +14,7 @@ import streamlit as st
 import rules
 from engine import AttackMods, DefendMods, Defender, Weapon, combine, simulate
 
-N_SIMS = 20_000
+N_SIMS = 100_000
 HERE = Path(__file__).parent
 COMBAT_TAGS = ["Ground", "Flying", "Armoured", "Biological", "Light", "Mechanical", "Psionic"]
 CARDS = json.loads((HERE / "cards.json").read_text())
