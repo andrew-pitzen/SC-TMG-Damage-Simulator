@@ -851,7 +851,43 @@
               "Siege Mode": true
             }
           },
-          "note": "While in Siege Mode, Damage is treated as equal to the target's current Size (min 1). Applied to every weapon; wording is partly garbled in the source."
+          "note": "While in Siege Mode, Damage is treated as equal to the target's current Size (min 1). Applied to every weapon"
+        },
+        {
+          "name": "Shaped Blast",
+          "kind": "ability",
+          "side": "attack",
+          "effects": {
+            "bonus_dice_per_model": 4
+          },
+          "keywords": [
+            "Pinpoint",
+            "Locked In (4)"
+          ],
+          "phase": "ranged",
+          "when": {
+            "toggle": {
+              "Siege Mode": true
+            }
+          },
+          "note": "Once per Game. When this Unit declares a Ranged Attack action. If this Unit has SIEGE MODE Status, its weapon gains PINPOINT and LOCKED IN (4)."
+        },
+        {
+          "name": "Smart Shells",
+          "kind": "ability",
+          "side": "attack",
+          "effects": {},
+          "keywords": [
+            "Indirect Fire",
+            "Long Range 24\""
+          ],
+          "phase": "ranged",
+          "when": {
+            "toggle": {
+              "Siege Mode": true
+            }
+          },
+          "note": "Once per Game. When this Unit declares a Ranged Attack action. If this Unit has SIEGE MODE Status, its weapon gains INDIRECT FIRE and LONG RANGE (24)."
         }
       ]
     },
