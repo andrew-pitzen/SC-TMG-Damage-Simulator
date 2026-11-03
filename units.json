@@ -1,5 +1,5 @@
 {
-  "_readme": "Unit data transcribed (OCR) from the official StarCraft TMG faction card sheets (Zerg v1.03.26, Terran v1.04.26, Protoss). Weapon keys: name, phase (ranged|melee), rng, target, roa, hit, dmg, surge (None|D3|D6), surge_plus (D3+1 -> 1), surge_tags (any listed tag triggers surge), anti_evade, precision, critical, pierce_x/pierce_tag, keywords (display only), upgrade (true = replaces/modifies a base weapon). Unit keys: tags, armour/evade (null = none), hp, shield, models_default/models_max, size, verify (note when the source was unclear). Edit or add units freely.",
+  "_readme": "Unit data transcribed (OCR) from the official StarCraft TMG faction card sheets (Zerg v1.03.26, Terran v1.04.26, Protoss). Weapon keys: name, phase (ranged|melee), rng, target, roa, hit, dmg, surge (None|D3|D6), surge_plus (D3+1 -> 1), surge_tags (any listed tag triggers surge), anti_evade, precision, critical, pierce_x/pierce_tag, keywords (display only), upgrade (true = replaces/modifies a base weapon). Unit keys: tags, armour/evade (null = none), hp, shield, models_default/models_max, size, verify (note when the source was unclear). Weapon keywords that the calculator acts on: 'Burst Fire X\" (N)' (checkbox, +N RoA per model), 'Long Range X\"' (checkbox, -1 to hit) and 'Concentrated Fire (N)' (max N models destroyed, excess damage ignored). An attack option may add keywords with a top-level 'keywords' list (next to 'effects', not inside it). Edit or add units freely.",
   "Terran": {
     "Auto-Turret": {
       "tags": [
@@ -298,7 +298,7 @@
       "evade": 6,
       "hp": 5,
       "shield": 0,
-      "models_default": 4,
+      "models_default": 2,
       "models_max": 4,
       "size": 2,
       "weapons": [
@@ -397,7 +397,7 @@
           ]
         },
         {
-          "name": "AGG-12 (upgrade)",
+          "name": "AGG-12 (upgrade, 1 model)",
           "phase": "ranged",
           "rng": 12,
           "target": "All",
@@ -464,7 +464,7 @@
             "Bayonet",
             "C-14 Rifle"
           ],
-          "note": "1 CP. Close Combat weapons and the C-14 Rifle gain Precision (3). The 2 non-lethal damage to the unit is not modelled."
+          "note": "1 CP. Close Combat weapons and the C-14 Rifle gain Precision (3)."
         },
         {
           "name": "Slugthrower",
@@ -639,6 +639,19 @@
           },
           "phase": "any",
           "note": "1 CP. All of Nova's weapons gain Precision (2)."
+        },
+        {
+          "name": "Head Shot",
+          "kind": "ability",
+          "side": "attack",
+          "effects": {
+            "dmg_mod": 1
+          },
+          "keywords": [
+            "Concentrated Fire (1)"
+          ],
+          "phase": "ranged",
+          "note": "1 CP. Once Per Game. Gain damage 3, Concentrated Fire (1)."
         }
       ]
     },
@@ -1366,7 +1379,7 @@
       "evade": 6,
       "hp": 6,
       "shield": 3,
-      "models_default": 2,
+      "models_default": 1,
       "models_max": 2,
       "size": 3,
       "weapons": [
@@ -1698,7 +1711,7 @@
       "evade": 5,
       "hp": 4,
       "shield": 0,
-      "models_default": 4,
+      "models_default": 2,
       "models_max": 4,
       "size": 2,
       "weapons": [
