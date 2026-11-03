@@ -20,6 +20,9 @@ Rules implemented:
   * Damage = remaining dice x DMG (PIERCE tag (X) replaces DMG vs. that tag).
   * Casualties: total damage (plus damage already on the unit) removes models in order; the
     first model carries any Shield; leftover damage stays as a marker.
+  * CONCENTRATED FIRE (X): the attack can destroy at most X models. Once X models are down, any
+    excess damage (including partial damage on the next model) is ignored. If the weapon and a
+    card/option give different values, the lowest (strictest) applies.
 
 Keyword definitions for PRECISION, CRITICAL HIT, TOUGH, DODGE and ANTI-EVADE follow the
 community rules wiki (tmgcraft.com); step ordering between Surge and Critical Hit is inferred.
@@ -61,6 +64,7 @@ class Weapon:
     critical: int = 0
     anti_evade: int = 0
     bt: int = 0                # Blast Template: units under the template (S Dice "BT" = this value)
+    concentrated_fire: int = 0 # CONCENTRATED FIRE (X): max models destroyed (0 = off)
 
 
 @dataclass
@@ -94,6 +98,7 @@ class AttackMods:
     anti_evade: int = 0
     pierce_x: int = 0
     pierce_tag: str = ""
+    concentrated_fire: int = 0  # max models destroyed (0 = off); lowest non-zero value wins
 
 
 @dataclass
@@ -147,6 +152,9 @@ def combine(effects: List[dict], cls):
                     setattr(mods, key, val)
             elif key == "grant_evade":
                 if val and (cur == 0 or val < cur):  # best (lowest) target number
+                    setattr(mods, key, val)
+            elif key == "concentrated_fire":
+                if val and (cur == 0 or val < cur):  # a cap: the strictest (lowest) one applies
                     setattr(mods, key, val)
             else:
                 setattr(mods, key, cur + val)
@@ -282,8 +290,16 @@ def simulate(weapon: Weapon, defender: Defender,
     visible = defender.models if defender.visible is None else min(defender.visible, defender.models)
     kills = np.where(total >= first_hp, 1 + (total - first_hp) // hp, 0)
     kills = np.minimum(kills, visible)
+    # CONCENTRATED FIRE (X): at most X models are destroyed; everything beyond that is ignored.
+    cf_values = [v for v in (weapon.concentrated_fire, atk.concentrated_fire) if v]
+    cf = min(cf_values) if cf_values else 0
+    capped = (kills >= cf) if cf else np.zeros(n, dtype=bool)
+    if cf:
+        kills = np.minimum(kills, cf)
     spent = np.where(kills > 0, first_hp + (kills - 1) * hp, 0)
-    leftover = np.where(kills >= visible, 0, total - spent)
+    leftover = np.where((kills >= visible) | capped, 0, total - spent)
+    if cf:  # report the damage that actually lands (excess is ignored)
+        new_damage = np.where(capped, np.maximum(0, spent - defender.existing_damage), new_damage)
 
     return {
         "attack_pool": attack_pool, "hits": hits, "surged": bypass,
@@ -295,5 +311,6 @@ def simulate(weapon: Weapon, defender: Defender,
             "evade_target": ev_target, "surge_die": ((f"BT={weapon.bt}" if surge_die == "BT" else surge_die) + (f"+{surge_plus + atk.surge_bonus}" if surge_plus + atk.surge_bonus else "")) if surge_applies else "off",
             "per_die_damage": per_die, "first_model_hp": first_hp,
             "precision": precision, "critical": critical, "tough": dfn.tough, "dodge": dfn.dodge,
+            "concentrated_fire": cf,
         },
     }

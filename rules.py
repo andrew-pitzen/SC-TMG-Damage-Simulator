@@ -7,6 +7,10 @@ units.json conventions
   unit["options"]  : passives / upgrades / abilities that change attacks or defence:
       name, kind ("passive" | "upgrade" | "ability"), side ("attack" | "defend"),
       effects {...}                      (keys of AttackMods / DefendMods)
+      keywords  ["Burst Fire 4\" (3)", "Concentrated Fire (1)"]   attack options only: keywords the option
+                                         adds to the weapon. They are merged with the weapon's own
+                                         keywords (weapon_keywords); Burst Fire, Long Range and
+                                         Concentrated Fire are acted on, others are display-only.
       phase     "any" | "ranged" | "melee"   attack phase of the weapon the option works with
       weapons   [names]                  only for weapons whose name contains one of these
       when      {"target_size_min": 3, "target_tag": "Armoured", "toggle": {"Siege Mode": false}}
@@ -17,9 +21,74 @@ units.json conventions
 """
 from __future__ import annotations
 
+import re
+
 from engine import norm_tag
 
 KIND_LABEL = {"passive": "Passive", "upgrade": "Upgrade", "ability": "Ability"}
+
+
+# --------------------------------------------------------------------------- #
+# Keywords (weapon keywords + keywords granted by ticked options)
+# --------------------------------------------------------------------------- #
+def weapon_keywords(weapon: dict | None, options=()) -> list:
+    """The weapon's own keywords plus any keywords granted by the given (ticked) options."""
+    kws = list((weapon or {}).get("keywords", []))
+    for o in options:
+        kws += o.get("keywords", [])
+    return kws
+
+
+def find_keyword(kws: list, name: str) -> str | None:
+    """First keyword containing `name` (case-insensitive), or None."""
+    name = name.lower()
+    return next((k for k in kws if name in k.lower()), None)
+
+
+def keyword_value(kws: list, name: str, pick=max) -> int:
+    """Number in a keyword's trailing parentheses, e.g. 'Concentrated Fire (1)' -> 1 and
+    'Burst Fire 4" (3)' -> 3. 0 when the keyword is missing or has no number. If several
+    keywords match, `pick` (max or min) chooses between their values."""
+    vals = []
+    for k in kws:
+        if name.lower() in k.lower():
+            m = re.search(r"\((\d+)\)\s*$", k)
+            if m:
+                vals.append(int(m.group(1)))
+    return pick(vals) if vals else 0
+
+
+# --------------------------------------------------------------------------- #
+# Swapping attacker and defender
+# --------------------------------------------------------------------------- #
+def swap_selection(state, units: dict, custom: str) -> list:
+    """Swap the faction and unit picks of the attacker and the defender.
+
+    `state` is st.session_state (any dict-like). Keys: a_fac / d_fac and a_unit_<faction> /
+    d_unit_<faction>. Units without weapons (e.g. a Pylon) can't be attackers; in that case the
+    attacker keeps the faction but falls back to its first armed unit. Returns notes to show.
+    """
+    a_fac, d_fac = state.get("a_fac"), state.get("d_fac")
+    a_unit = state.get(f"a_unit_{a_fac}")
+    d_unit = state.get(f"d_unit_{d_fac}")
+    notes = []
+    state["a_fac"], state["d_fac"] = d_fac, a_fac
+
+    # the old defender becomes the attacker
+    if d_fac != custom:
+        if d_unit in units[d_fac] and units[d_fac][d_unit]["weapons"]:
+            state[f"a_unit_{d_fac}"] = d_unit
+        else:
+            state.pop(f"a_unit_{d_fac}", None)
+            if d_unit:
+                notes.append(f"{d_unit} has no weapons, so it can't be the attacker; showing the first armed {d_fac} unit.")
+    # the old attacker becomes the defender
+    if a_fac != custom:
+        if a_unit in units[a_fac]:
+            state[f"d_unit_{a_fac}"] = a_unit
+        else:
+            state.pop(f"d_unit_{a_fac}", None)
+    return notes
 
 
 def toggles_match(requires: dict | None, state: dict) -> bool:

@@ -90,6 +90,17 @@ def option_inputs(options, prefix, own_state, target_size, target_tags):
     return chosen
 
 
+def swap_sides():
+    """Button callback: swap the faction and unit picks of the attacker and the defender."""
+    st.session_state["swap_notes"] = rules.swap_selection(st.session_state, UNITS, CUSTOM)
+
+
+st.button("⇄ Swap attacker and defender", on_click=swap_sides,
+          help="Swaps the faction and unit selections between the two sides. Other settings (toggles, "
+               "model counts, tweaks, cards) stay on the side they were set on.")
+for _note in st.session_state.pop("swap_notes", []):
+    st.info(_note)
+
 # The defender block runs first: attacker conditions (e.g. Titan Killers) depend on the target's Size and tags.
 left, right = st.columns(2)
 
@@ -158,6 +169,7 @@ with left:
     a_opts = []
     long_range = False
     burst_fire = False
+    burst_dice = 3   # extra RoA per model when Burst Fire is on (the number in "Burst Fire X\" (N)")
     a_size = 2
 
     if a_faction == CUSTOM:
@@ -182,11 +194,16 @@ with left:
         w_ae = c3.number_input("ANTI-EVADE (X)", 0, 4, 0, key="a_ae")
         long_range = st.checkbox("Long Range (target beyond normal range: -1 to hit)", key="a_lr",
                                  help="Makes the Hit roll 1 harder (e.g. 3+ becomes 4+).")
-        burst_fire = st.checkbox("Burst Fire (If within x\", increase ROA)", key=f"a_lr",
-                                 help="Increases the ROA of the weapon.")
+        c1, c2 = st.columns(2)
+        burst_fire = c1.checkbox("Burst Fire (target within range: increase RoA)", key="a_bf",
+                                 help="Increases the RoA of the weapon.")
+        burst_dice = c2.number_input("Burst Fire bonus RoA (per model)", 1, 10, 3, key="a_bfd",
+                                     disabled=not burst_fire)
+        w_cf = st.number_input("CONCENTRATED FIRE (X, 0 = off)", 0, 10, 0, key="a_cf",
+                               help="The attack can destroy at most X models; excess damage is ignored.")
         a_size = st.number_input("Attacker Size (for size-based cards)", 0, 6, 2, key="a_size")
         weapon = Weapon(models, roa, hit, dmg, surge_die, surge_plus, surge_tags, pierce_x, pierce_tag,
-                        w_prec, w_crit, w_ae)
+                        w_prec, w_crit, w_ae, concentrated_fire=w_cf)
     else:
         unit_names = [u for u, d in UNITS[a_faction].items() if d["weapons"]]
         a_unit = st.selectbox("Unit", unit_names, key=f"a_unit_{a_faction}")
@@ -222,17 +239,29 @@ with left:
                         w.get("surge_tags", []), w.get("pierce_x", 0), w.get("pierce_tag", ""),
                         w.get("precision", 0), w.get("critical", 0), w.get("anti_evade", 0), bt)
         st.caption(f"**{a_unit}** - {weapon_label(w)} - range {w['rng']} - targets {w['target']}")
-        if any("long range" in kw.lower() for kw in w.get("keywords", [])):
-            long_range = st.checkbox("Long Range (target beyond normal range: -1 to hit)", key=f"a_lr_{wk}",
-                                     help="This weapon has a Long Range keyword. Tick when firing at long range: "
-                                          "the Hit roll is 1 harder (e.g. 3+ becomes 4+).")
-        if any("burst fire" in kw.lower() for kw in w.get("keywords", [])):
-            burst_fire = st.checkbox("Burst Fire (If within x\", increase ROA)", key=f"a_lr_{wk}",
-                                     help="This weapon has a Burst Fire keyword. Tick when firing within Burst Fire range: "
-                                          "the ROA increases")
+        # The keyword checkboxes depend on which options are ticked (an option can add keywords), so the
+        # options are rendered first; the container keeps the keyword checkboxes above them on screen.
+        kw_box = st.container()
         a_opts = option_inputs([o for o in udata.get("options", [])
                                 if o["side"] == "attack" and rules.matches_weapon(o, w)],
                                f"a_{a_unit}", a_state, d_size, d_tags)
+        kws = rules.weapon_keywords(w, a_opts)   # weapon keywords + keywords from ticked options
+        weapon.concentrated_fire = rules.keyword_value(kws, "concentrated fire", min)
+        with kw_box:
+            if rules.find_keyword(kws, "long range"):
+                long_range = st.checkbox("Long Range (target beyond normal range: -1 to hit)", key=f"a_lr_{wk}",
+                                         help="This weapon has a Long Range keyword. Tick when firing at long range: "
+                                              "the Hit roll is 1 harder (e.g. 3+ becomes 4+).")
+            bf_kw = rules.find_keyword(kws, "burst fire")
+            if bf_kw:
+                burst_dice = rules.keyword_value(kws, "burst fire")
+                burst_fire = st.checkbox(f"{bf_kw}: target within Burst Fire range (+{burst_dice} RoA per model)",
+                                         key=f"a_bf_{wk}",
+                                         help="This weapon has a Burst Fire keyword. Tick when firing within "
+                                              "Burst Fire range: the RoA increases by the number in brackets.")
+            if weapon.concentrated_fire:
+                st.caption(f"{rules.find_keyword(kws, 'concentrated fire')}: at most {weapon.concentrated_fire} "
+                           f"model(s) can be destroyed by this attack; excess damage is ignored.")
 
     st.markdown("**Tactical cards / other buffs**")
     atk_cards = st.multiselect("Attacker cards", cards_for("attacker", a_faction), key=f"a_cards_{a_faction}",
@@ -272,7 +301,7 @@ d_opts_skipped = [o["name"] for o in d_opts if not rules.phase_ok(o, a_phase)]
 
 atk_effects = ([rules.option_effects(o, d_size) for o in a_opts]
                + ([{"hit_mod": -1}] if long_range else [])
-               + ([{"bonus_dice_per_model": +3}] if burst_fire else [])
+               + ([{"bonus_dice_per_model": burst_dice}] if burst_fire else [])
                + [CARDS["attacker"][c]["effects"] for c in atk_used]
                + [{"hit_mod": ca_hit, "bonus_dice_per_model": ca_dpm, "bonus_dice_flat": ca_flat, "dmg_mod": ca_dmg,
                    "surge_bonus": ca_sb, "reroll_hits": ca_rr, "precision": ca_pr, "critical": ca_cr, "anti_evade": ca_ae}])
@@ -301,7 +330,8 @@ m3.metric("P(at least 1 kill)", f"{(kills >= 1).mean():.1%}")
 m4.metric("P(unit wiped)", f"{(kills >= d_models).mean():.1%}")
 
 kw = [f"{n} {meta[k_]}" for n, k_ in [("Precision", "precision"), ("Critical Hit", "critical"),
-                                      ("Tough", "tough"), ("Dodge", "dodge")] if meta[k_]]
+                                      ("Tough", "tough"), ("Dodge", "dodge"),
+                                      ("Concentrated Fire", "concentrated_fire")] if meta[k_]]
 st.caption(
     f"Effective numbers: Attack pool **{meta['pool']}** dice - Hit **{meta['hit_target']}+** - "
     f"Armour **{tn(meta['armour_target'])}** - Evade **{'off' if meta['evade_target'] is None else tn(meta['evade_target'])}** - "
