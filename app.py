@@ -157,6 +157,7 @@ with left:
     a_faction = st.selectbox("Faction", FACTIONS + [CUSTOM], key="a_fac")
     a_opts = []
     long_range = False
+    burst_fire = False
     a_size = 2
 
     if a_faction == CUSTOM:
@@ -181,6 +182,8 @@ with left:
         w_ae = c3.number_input("ANTI-EVADE (X)", 0, 4, 0, key="a_ae")
         long_range = st.checkbox("Long Range (target beyond normal range: -1 to hit)", key="a_lr",
                                  help="Makes the Hit roll 1 harder (e.g. 3+ becomes 4+).")
+        burst_fire = st.checkbox("Burst Fire (If within x\", increase ROA)", key=f"a_lr",
+                                 help="Increases the ROA of the weapon.")
         a_size = st.number_input("Attacker Size (for size-based cards)", 0, 6, 2, key="a_size")
         weapon = Weapon(models, roa, hit, dmg, surge_die, surge_plus, surge_tags, pierce_x, pierce_tag,
                         w_prec, w_crit, w_ae)
@@ -223,6 +226,10 @@ with left:
             long_range = st.checkbox("Long Range (target beyond normal range: -1 to hit)", key=f"a_lr_{wk}",
                                      help="This weapon has a Long Range keyword. Tick when firing at long range: "
                                           "the Hit roll is 1 harder (e.g. 3+ becomes 4+).")
+        if any("burst fire" in kw.lower() for kw in w.get("keywords", [])):
+            burst_fire = st.checkbox("Burst Fire (If within x\", increase ROA)", key=f"a_lr_{wk}",
+                                     help="This weapon has a Burst Fire keyword. Tick when firing within Burst Fire range: "
+                                          "the ROA increases")
         a_opts = option_inputs([o for o in udata.get("options", [])
                                 if o["side"] == "attack" and rules.matches_weapon(o, w)],
                                f"a_{a_unit}", a_state, d_size, d_tags)
@@ -265,6 +272,7 @@ d_opts_skipped = [o["name"] for o in d_opts if not rules.phase_ok(o, a_phase)]
 
 atk_effects = ([rules.option_effects(o, d_size) for o in a_opts]
                + ([{"hit_mod": -1}] if long_range else [])
+               + ([{"bonus_dice_per_model": +3}] if burst_fire else [])
                + [CARDS["attacker"][c]["effects"] for c in atk_used]
                + [{"hit_mod": ca_hit, "bonus_dice_per_model": ca_dpm, "bonus_dice_flat": ca_flat, "dmg_mod": ca_dmg,
                    "surge_bonus": ca_sb, "reroll_hits": ca_rr, "precision": ca_pr, "critical": ca_cr, "anti_evade": ca_ae}])
