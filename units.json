@@ -1267,7 +1267,7 @@
           ]
         },
         {
-          "name": "Photon Disruptor (upgrade)",
+          "name": "Left Phase Disruptor (upgrade)",
           "phase": "ranged",
           "rng": 12,
           "target": "Ground",
@@ -1282,6 +1282,26 @@
           "pierce_tag": "Armoured",
           "keywords": [
             "Pierce Armoured (3)"
+          ],
+          "upgrade": true
+        },
+        {
+          "name": "Right Phase Disruptor (upgrade)",
+          "phase": "ranged",
+          "rng": 12,
+          "target": "Ground",
+          "roa": 4,
+          "hit": 3,
+          "dmg": 1,
+          "surge": "D3",
+          "surge_tags": [
+            "Armoured"
+          ],
+          "pierce_x": 3,
+          "pierce_tag": "Armoured",
+          "keywords": [
+            "Pierce Armoured (3)",
+            "Sidearm"
           ],
           "upgrade": true
         },
