@@ -65,6 +65,7 @@ class Weapon:
     anti_evade: int = 0
     bt: int = 0                # Blast Template: units under the template (S Dice "BT" = this value)
     concentrated_fire: int = 0 # CONCENTRATED FIRE (X): max models destroyed (0 = off)
+    name: str = ""             # display only (reported back in meta["weapons"])
 
 
 @dataclass
@@ -208,14 +209,13 @@ def roll_surge(kind: str, n: int, rng: np.random.Generator) -> np.ndarray:
 # --------------------------------------------------------------------------- #
 # Simulation
 # --------------------------------------------------------------------------- #
-def simulate(weapon: Weapon, defender: Defender,
-             atk: AttackMods | None = None, dfn: DefendMods | None = None,
-             n: int = N_DEFAULT, seed: int | None = None) -> Dict[str, np.ndarray]:
-    atk = atk or AttackMods()
-    dfn = dfn or DefendMods()
-    rng = np.random.default_rng(seed)
-    tags = {norm_tag(t) for t in defender.tags}
+def _roll_attack(weapon: Weapon, defender: Defender, atk: AttackMods, dfn: DefendMods,
+                 n: int, rng: np.random.Generator, tags: set) -> dict:
+    """Resolve one weapon from Attack Pool to Damage Pool (steps 1-5) and price the damage dice.
 
+    Returns the per-stage dice, the damage before any TOTAL damage reduction ("raw_damage") and
+    this weapon's meta. Casualties are NOT applied here, so several weapons can be pooled first.
+    """
     # 1. Attack pool
     pool = weapon.models * max(0, weapon.roa + atk.bonus_dice_per_model) + atk.bonus_dice_flat
     pool = max(0, pool - dfn.attack_pool_reduction)
@@ -275,42 +275,92 @@ def simulate(weapon: Weapon, defender: Defender,
         evaded = np.zeros(n, dtype=np.int64)
     damage_dice = pre_evade - evaded
 
-    # 6. Damage & casualties
+    # 6. Price the damage dice (casualties are applied later, once for the whole attack)
     per_die = atk.dmg_set if atk.dmg_set else weapon.dmg
     pierce_x = max(weapon.pierce_x, atk.pierce_x)
     pierce_tag = norm_tag(weapon.pierce_tag or atk.pierce_tag)
     if pierce_x and pierce_tag in tags:
         per_die = pierce_x
     per_die = max(0, per_die + atk.dmg_mod - dfn.damage_reduction)
-    new_damage = np.maximum(0, damage_dice * per_die - dfn.total_reduction)
-    total = new_damage + defender.existing_damage
-
-    hp = max(1, defender.hp + dfn.hp_bonus)
-    first_hp = max(1, hp + defender.shield + dfn.shield_bonus)
-    visible = defender.models if defender.visible is None else min(defender.visible, defender.models)
-    kills = np.where(total >= first_hp, 1 + (total - first_hp) // hp, 0)
-    kills = np.minimum(kills, visible)
-    # CONCENTRATED FIRE (X): at most X models are destroyed; everything beyond that is ignored.
-    cf_values = [v for v in (weapon.concentrated_fire, atk.concentrated_fire) if v]
-    cf = min(cf_values) if cf_values else 0
-    capped = (kills >= cf) if cf else np.zeros(n, dtype=bool)
-    if cf:
-        kills = np.minimum(kills, cf)
-    spent = np.where(kills > 0, first_hp + (kills - 1) * hp, 0)
-    leftover = np.where((kills >= visible) | capped, 0, total - spent)
-    if cf:  # report the damage that actually lands (excess is ignored)
-        new_damage = np.where(capped, np.maximum(0, spent - defender.existing_damage), new_damage)
 
     return {
         "attack_pool": attack_pool, "hits": hits, "surged": bypass,
         "armour_pool": armour_pool, "armour_saved": saved, "armour_fail": armour_fail,
-        "evaded": evaded, "damage_dice": damage_dice, "damage": new_damage,
-        "kills": kills, "leftover": leftover,
+        "evaded": evaded, "damage_dice": damage_dice, "raw_damage": damage_dice * per_die,
+        "cf": min([v for v in (weapon.concentrated_fire, atk.concentrated_fire) if v], default=0),
         "meta": {
+            "name": weapon.name,
             "pool": pool, "hit_target": hit_target, "armour_target": armour_target,
             "evade_target": ev_target, "surge_die": ((f"BT={weapon.bt}" if surge_die == "BT" else surge_die) + (f"+{surge_plus + atk.surge_bonus}" if surge_plus + atk.surge_bonus else "")) if surge_applies else "off",
-            "per_die_damage": per_die, "first_model_hp": first_hp,
+            "per_die_damage": per_die, "concentrated_fire": min(
+                [v for v in (weapon.concentrated_fire, atk.concentrated_fire) if v], default=0),
             "precision": precision, "critical": critical, "tough": dfn.tough, "dodge": dfn.dodge,
-            "concentrated_fire": cf,
         },
     }
+
+
+_STAGE_KEYS = ("attack_pool", "hits", "surged", "armour_pool", "armour_saved", "armour_fail",
+               "evaded", "damage_dice")
+
+
+def simulate_attacks(attacks: List[tuple], defender: Defender, dfn: DefendMods | None = None,
+                     n: int = N_DEFAULT, seed: int | None = None) -> Dict[str, np.ndarray]:
+    """Several weapons fired in ONE attack (a main weapon plus Sidearm weapons).
+
+    `attacks` is a list of (Weapon, AttackMods | None). Each weapon rolls its own pool through
+    Hit, Surge, Armour and Evade. Their damage is then added together and casualties are worked
+    out once, weapon by weapon in list order: TOTAL damage reduction is taken off once, the first
+    model carries the Shield once, and CONCENTRATED FIRE limits only the weapon that has it (the
+    other weapons are unlimited). The first entry is the main weapon; its numbers appear at the top level of meta and
+    every weapon's numbers are in meta["weapons"].
+    """
+    dfn = dfn or DefendMods()
+    rng = np.random.default_rng(seed)
+    tags = {norm_tag(t) for t in defender.tags}
+    parts = [_roll_attack(w, defender, a or AttackMods(), dfn, n, rng, tags) for w, a in attacks]
+
+    stages = {k: sum(p[k] for p in parts) for k in _STAGE_KEYS}
+
+    hp = max(1, defender.hp + dfn.hp_bonus)
+    first_hp = max(1, hp + defender.shield + dfn.shield_bonus)
+    visible = defender.models if defender.visible is None else min(defender.visible, defender.models)
+
+    def kills_for(total):
+        return np.minimum(np.where(total >= first_hp, 1 + (total - first_hp) // hp, 0), visible)
+
+    def spent_for(k):  # damage needed to destroy k models (the first one carries the Shield)
+        return np.where(k > 0, first_hp + (k - 1) * hp, 0)
+
+    # Casualties are worked out weapon by weapon, main weapon first. Total damage reduction comes off
+    # once for the whole attack (used up by the first weapons' damage). CONCENTRATED FIRE (X) only
+    # limits the weapon that has it: that weapon can destroy at most X models, and its excess damage
+    # (including partial damage on the next model) is ignored. Other weapons are not limited.
+    cum = np.full(n, defender.existing_damage, dtype=np.int64)
+    reduction = np.full(n, dfn.total_reduction, dtype=np.int64)
+    landed = np.zeros(n, dtype=np.int64)
+    for p in parts:
+        dmg = p["raw_damage"]
+        cut = np.minimum(dmg, reduction)
+        dmg, reduction = dmg - cut, reduction - cut
+        before = kills_for(cum)
+        after = cum + dmg
+        if p["cf"]:
+            k_after = kills_for(after)
+            capped = k_after >= before + p["cf"]
+            after = np.where(capped, spent_for(np.minimum(k_after, before + p["cf"])), after)
+        landed += after - cum
+        cum = after
+    kills = kills_for(cum)
+    leftover = np.where(kills >= visible, 0, cum - spent_for(kills))
+    new_damage = landed
+
+    meta = dict(parts[0]["meta"])
+    meta.update({"first_model_hp": first_hp, "weapons": [p["meta"] for p in parts]})
+    return {**stages, "damage": new_damage, "kills": kills, "leftover": leftover, "meta": meta}
+
+
+def simulate(weapon: Weapon, defender: Defender,
+             atk: AttackMods | None = None, dfn: DefendMods | None = None,
+             n: int = N_DEFAULT, seed: int | None = None) -> Dict[str, np.ndarray]:
+    """One weapon attacking alone (see simulate_attacks for a main weapon + Sidearms)."""
+    return simulate_attacks([(weapon, atk)], defender, dfn, n, seed)
