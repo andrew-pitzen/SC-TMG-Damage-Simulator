@@ -48,6 +48,68 @@
         }
       ]
     },
+    "Fire Bat":{
+      "tags": [
+        "Armoured",
+        "Biological",
+        "Ground"
+      ],
+      "armour": 5,
+      "evade": 6,
+      "hp": 3,
+      "shield": 0,
+      "models_default": 4,
+      "models_max": 6,
+      "size": 2,
+      "weapons": [
+        {
+          "name": "Perdition Flamethrower",
+          "phase": "ranged",
+          "rng": 8,
+          "target": "Ground",
+          "roa": 2,
+          "hit": 3,
+          "dmg": 1,
+          "surge": "D3",
+          "surge_tags": [
+            "Light"
+          ],
+          "keywords": [
+            "Instant",
+            "Anti-Evade (1)"
+          ]
+        },
+        {
+          "name": "Flame Strike",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 2,
+          "hit": 3,
+          "dmg": 1,
+          "note": "Card obscured in promo picture, can't see surge."
+        }
+      ],
+      "options": [
+        {
+          "name": "Fire it up",
+          "kind": "passive",
+          "side": "attack",
+          "effects": {
+
+          },
+          "phase": "ranged",
+          "weapons": [
+            "Perdition Flamethrower"
+          ],
+          "keywords": [
+            "flamer template"
+          ],
+          "situational": true,
+          "note": "You may choose up to 1 (or 2 if your unit is supply 2) models to use the Flamer Template rather than rolling its regular RoA."
+        }
+      ]
+    },
     "Goliath": {
       "tags": [
         "Armoured",
