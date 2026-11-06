@@ -170,6 +170,7 @@ with left:
     long_range = False
     burst_fire = False
     burst_dice = 3   # extra RoA per model when Burst Fire is on (the number in "Burst Fire X\" (N)")
+    flamer_flat = 0  # dice added by the Flamer Template (units under it); 0 when no model uses it
     a_size = 2
 
     if a_faction == CUSTOM:
@@ -262,6 +263,21 @@ with left:
             if weapon.concentrated_fire:
                 st.caption(f"{rules.find_keyword(kws, 'concentrated fire')}: at most {weapon.concentrated_fire} "
                            f"model(s) can be destroyed by this attack; excess damage is ignored.")
+            # FLAMER TEMPLATE: FM models use the template instead of rolling their RoA, so they leave the
+            # normal pool; the template adds FT dice (one per unit under it).
+            # Total dice = (models - FM) x RoA + FT.
+            if w.get("flamer") or rules.find_keyword(kws, "flamer template"):
+                c1, c2 = st.columns(2)
+                flamer_models = c1.number_input(
+                    "Models using the Flamer Template", 0, int(models), min(1, int(models)),
+                    key=f"a_fm_{wk}_{models}",
+                    help="These models don't roll their regular RoA; they use the template instead.")
+                flamer_units = c2.number_input(
+                    "FT: units under the Flamer Template", 0, 30, 1, key=f"a_ft_{wk}",
+                    help="Each unit under the template adds one attack die.")
+                weapon.models = int(models) - int(flamer_models)
+                flamer_flat = int(flamer_units) if flamer_models else 0
+                st.caption(f"Flamer Template: {weapon.models} model(s) x RoA + {flamer_flat} template dice.")
 
     st.markdown("**Tactical cards / other buffs**")
     atk_cards = st.multiselect("Attacker cards", cards_for("attacker", a_faction), key=f"a_cards_{a_faction}",
@@ -302,6 +318,7 @@ d_opts_skipped = [o["name"] for o in d_opts if not rules.phase_ok(o, a_phase)]
 atk_effects = ([rules.option_effects(o, d_size) for o in a_opts]
                + ([{"hit_mod": -1}] if long_range else [])
                + ([{"bonus_dice_per_model": burst_dice}] if burst_fire else [])
+               + ([{"bonus_dice_flat": flamer_flat}] if flamer_flat else [])
                + [CARDS["attacker"][c]["effects"] for c in atk_used]
                + [{"hit_mod": ca_hit, "bonus_dice_per_model": ca_dpm, "bonus_dice_flat": ca_flat, "dmg_mod": ca_dmg,
                    "surge_bonus": ca_sb, "reroll_hits": ca_rr, "precision": ca_pr, "critical": ca_cr, "anti_evade": ca_ae}])
