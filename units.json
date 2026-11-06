@@ -107,6 +107,20 @@
           ],
           "situational": true,
           "note": "You may choose up to 1 (or 2 if your unit is supply 2) models to use the Flamer Template rather than rolling its regular RoA."
+        },
+        {
+          "name": "Stimpack",
+          "kind": "ability",
+          "side": "attack",
+          "effects": {
+            "precision": 3
+          },
+          "phase": "any",
+          "weapons": [
+            "Flame Strike",
+            "Perdition Flamethrower"
+          ],
+          "note": "1 CP. Precision (3) for Close Combat weapons and Perdition Flamethrower."
         }
       ]
     },
