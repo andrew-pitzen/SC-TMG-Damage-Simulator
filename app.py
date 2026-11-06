@@ -274,10 +274,11 @@ with left:
                     help="These models don't roll their regular RoA; they use the template instead.")
                 flamer_units = c2.number_input(
                     "FT: units under the Flamer Template", 0, 30, 1, key=f"a_ft_{wk}",
-                    help="Each unit under the template adds one attack die.")
+                    help="Each unit under the template adds one attack die and one surge die.")
                 weapon.models = int(models) - int(flamer_models)
                 flamer_flat = int(flamer_units) if flamer_models else 0
-                st.caption(f"Flamer Template: {weapon.models} model(s) x RoA + {flamer_flat} template dice.")
+                st.caption(f"Flamer Template: {weapon.models} model(s) x RoA + {flamer_flat} template dice; "
+                           f"surge result +{flamer_flat} (if the weapon surges against the target).")
 
     st.markdown("**Tactical cards / other buffs**")
     atk_cards = st.multiselect("Attacker cards", cards_for("attacker", a_faction), key=f"a_cards_{a_faction}",
@@ -318,7 +319,7 @@ d_opts_skipped = [o["name"] for o in d_opts if not rules.phase_ok(o, a_phase)]
 atk_effects = ([rules.option_effects(o, d_size) for o in a_opts]
                + ([{"hit_mod": -1}] if long_range else [])
                + ([{"bonus_dice_per_model": burst_dice}] if burst_fire else [])
-               + ([{"bonus_dice_flat": flamer_flat}] if flamer_flat else [])
+               + ([{"bonus_dice_flat": flamer_flat, "surge_bonus": flamer_flat}] if flamer_flat else [])
                + [CARDS["attacker"][c]["effects"] for c in atk_used]
                + [{"hit_mod": ca_hit, "bonus_dice_per_model": ca_dpm, "bonus_dice_flat": ca_flat, "dmg_mod": ca_dmg,
                    "surge_bonus": ca_sb, "reroll_hits": ca_rr, "precision": ca_pr, "critical": ca_cr, "anti_evade": ca_ae}])
