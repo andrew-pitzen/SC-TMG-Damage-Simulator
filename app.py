@@ -12,7 +12,7 @@ import pandas as pd
 import streamlit as st
 
 import rules
-from engine import AttackMods, DefendMods, Defender, Weapon, combine, simulate
+from engine import AttackMods, DefendMods, Defender, Weapon, combine, simulate_attacks
 
 N_SIMS = 100_000
 HERE = Path(__file__).parent
@@ -88,6 +88,81 @@ def option_inputs(options, prefix, own_state, target_size, target_tags):
         if on and met:
             chosen.append(o)
     return chosen
+
+
+def configure_weapon(w, udata, a_unit, opt_prefix, a_state, target_size, target_tags):
+    """Controls for ONE weapon of the attacking unit (the main weapon or a Sidearm).
+
+    Returns {"weapon": Weapon, "effects": [effect dicts from ticked options / keyword boxes],
+    "opts": ticked unit options}. Widget keys include the weapon name, so several weapons can be
+    shown at once.
+    """
+    wk = f"{a_unit}_{w['name']}"
+    cap = 1 if "1 model" in w["name"] else udata["models_max"]
+    models = st.number_input("Models firing", 1, cap, min(udata["models_default"], cap), key=f"a_models_{wk}")
+    bt = 0
+    if w.get("blast"):
+        bt = st.number_input("BT: units under the Blast Template", 0, 30, 1, key=f"a_bt_{wk}",
+                             help="Blast Template weapon: RoA = base RoA + BT, and the S Dice result = BT.")
+
+    missing = w.get("roa") is None or w.get("dmg") is None
+    with st.expander("Edit weapon numbers (RoA / Hit / DMG)", expanded=missing):
+        if missing:
+            st.warning("This weapon's RoA or DMG could not be read from the source. Enter them from your card.")
+        e1, e2, e3 = st.columns(3)
+        o_roa = e1.number_input("RoA (base, + BT)" if w.get("blast") else "RoA", 0, 30, 1 if w.get("roa") is None else int(w["roa"]), key=f"a_oroa_{wk}")
+        o_hit = e2.selectbox("Hit", [2, 3, 4, 5, 6], index=[2, 3, 4, 5, 6].index(w["hit"]), key=f"a_ohit_{wk}",
+                             format_func=lambda v: f"{v}+")
+        o_dmg = e3.number_input("DMG", 0, 20, 1 if w.get("dmg") is None else int(w["dmg"]), key=f"a_odmg_{wk}")
+    weapon = Weapon(models, o_roa + bt, o_hit, o_dmg, w.get("surge", "None"), w.get("surge_plus", 0),
+                    w.get("surge_tags", []), w.get("pierce_x", 0), w.get("pierce_tag", ""),
+                    w.get("precision", 0), w.get("critical", 0), w.get("anti_evade", 0), bt, name=w["name"])
+    st.caption(f"**{a_unit}** - {weapon_label(w)} - range {w['rng']} - targets {w['target']}")
+    # The keyword checkboxes depend on which options are ticked (an option can add keywords), so the
+    # options are rendered first; the container keeps the keyword checkboxes above them on screen.
+    kw_box = st.container()
+    opts = option_inputs([o for o in udata.get("options", [])
+                          if o["side"] == "attack" and rules.matches_weapon(o, w)],
+                         opt_prefix, a_state, target_size, target_tags)
+    kws = rules.weapon_keywords(w, opts)   # weapon keywords + keywords from ticked options
+    weapon.concentrated_fire = rules.keyword_value(kws, "concentrated fire", min)
+    effects = [rules.option_effects(o, target_size) for o in opts]
+    with kw_box:
+        if rules.find_keyword(kws, "long range"):
+            if st.checkbox("Long Range (target beyond normal range: -1 to hit)", key=f"a_lr_{wk}",
+                           help="This weapon has a Long Range keyword. Tick when firing at long range: "
+                                "the Hit roll is 1 harder (e.g. 3+ becomes 4+)."):
+                effects.append({"hit_mod": -1})
+        bf_kw = rules.find_keyword(kws, "burst fire")
+        if bf_kw:
+            burst_dice = rules.keyword_value(kws, "burst fire")
+            if st.checkbox(f"{bf_kw}: target within Burst Fire range (+{burst_dice} RoA per model)",
+                           key=f"a_bf_{wk}",
+                           help="This weapon has a Burst Fire keyword. Tick when firing within "
+                                "Burst Fire range: the RoA increases by the number in brackets."):
+                effects.append({"bonus_dice_per_model": burst_dice})
+        if weapon.concentrated_fire:
+            st.caption(f"{rules.find_keyword(kws, 'concentrated fire')}: at most {weapon.concentrated_fire} "
+                       f"model(s) can be destroyed by this weapon; its excess damage is ignored.")
+        # FLAMER TEMPLATE: FM models use the template instead of rolling their RoA, so they leave the
+        # normal pool; the template adds FT dice (one per unit under it).
+        # Total dice = (models - FM) x RoA + FT.
+        if w.get("flamer") or rules.find_keyword(kws, "flamer template"):
+            c1, c2 = st.columns(2)
+            flamer_models = c1.number_input(
+                "Models using the Flamer Template", 0, int(models), min(1, int(models)),
+                key=f"a_fm_{wk}_{models}",
+                help="These models don't roll their regular RoA; they use the template instead.")
+            flamer_units = c2.number_input(
+                "FT: units under the Flamer Template", 0, 30, 1, key=f"a_ft_{wk}",
+                help="Each unit under the template adds one attack die and one surge die.")
+            weapon.models = int(models) - int(flamer_models)
+            flamer_flat = int(flamer_units) if flamer_models else 0
+            if flamer_flat:
+                effects.append({"bonus_dice_flat": flamer_flat, "surge_bonus": flamer_flat})
+            st.caption(f"Flamer Template: {weapon.models} model(s) x RoA + {flamer_flat} template dice; "
+                       f"surge result +{flamer_flat} (if the weapon surges against the target).")
+    return {"weapon": weapon, "effects": effects, "opts": opts}
 
 
 def swap_sides():
@@ -166,11 +241,8 @@ with right:
 with left:
     st.subheader("Attacker")
     a_faction = st.selectbox("Faction", FACTIONS + [CUSTOM], key="a_fac")
-    a_opts = []
-    long_range = False
-    burst_fire = False
-    burst_dice = 3   # extra RoA per model when Burst Fire is on (the number in "Burst Fire X\" (N)")
-    flamer_flat = 0  # dice added by the Flamer Template (units under it); 0 when no model uses it
+    a_opts = []      # ticked unit options of every weapon in this attack
+    entries = []     # one {"weapon", "effects", "opts"} per weapon fired (main weapon first)
     a_size = 2
 
     if a_faction == CUSTOM:
@@ -204,7 +276,10 @@ with left:
                                help="The attack can destroy at most X models; excess damage is ignored.")
         a_size = st.number_input("Attacker Size (for size-based cards)", 0, 6, 2, key="a_size")
         weapon = Weapon(models, roa, hit, dmg, surge_die, surge_plus, surge_tags, pierce_x, pierce_tag,
-                        w_prec, w_crit, w_ae, concentrated_fire=w_cf)
+                        w_prec, w_crit, w_ae, concentrated_fire=w_cf, name="Custom weapon")
+        entries.append({"weapon": weapon, "opts": [],
+                        "effects": ([{"hit_mod": -1}] if long_range else [])
+                                   + ([{"bonus_dice_per_model": burst_dice}] if burst_fire else [])})
     else:
         unit_names = [u for u, d in UNITS[a_faction].items() if d["weapons"]]
         a_unit = st.selectbox("Unit", unit_names, key=f"a_unit_{a_faction}")
@@ -219,70 +294,27 @@ with left:
             st.info(f"{a_unit} has no ranged weapons available, showing close combat weapons.")
         w = st.selectbox("Weapon", weapons, key=f"a_w_{a_unit}_{state_key(a_state)}", format_func=weapon_label)
         a_phase = w["phase"]
-        wk = f"{a_unit}_{w['name']}"
-        cap = 1 if "1 model" in w["name"] else udata["models_max"]
-        models = st.number_input("Models firing", 1, cap, min(udata["models_default"], cap), key=f"a_models_{wk}")
-        bt = 0
-        if w.get("blast"):
-            bt = st.number_input("BT: units under the Blast Template", 0, 30, 1, key=f"a_bt_{wk}",
-                                 help="Blast Template weapon: RoA = base RoA + BT, and the S Dice result = BT.")
+        main = configure_weapon(w, udata, a_unit, f"a_{a_unit}", a_state, d_size, d_tags)
+        entries.append(main)
+        a_opts += main["opts"]
 
-        missing = w.get("roa") is None or w.get("dmg") is None
-        with st.expander("Edit weapon numbers (RoA / Hit / DMG)", expanded=missing):
-            if missing:
-                st.warning("This weapon's RoA or DMG could not be read from the source. Enter them from your card.")
-            e1, e2, e3 = st.columns(3)
-            o_roa = e1.number_input("RoA (base, + BT)" if w.get("blast") else "RoA", 0, 30, 1 if w.get("roa") is None else int(w["roa"]), key=f"a_oroa_{wk}")
-            o_hit = e2.selectbox("Hit", [2, 3, 4, 5, 6], index=[2, 3, 4, 5, 6].index(w["hit"]), key=f"a_ohit_{wk}",
-                                 format_func=lambda v: f"{v}+")
-            o_dmg = e3.number_input("DMG", 0, 20, 1 if w.get("dmg") is None else int(w["dmg"]), key=f"a_odmg_{wk}")
-        weapon = Weapon(models, o_roa + bt, o_hit, o_dmg, w.get("surge", "None"), w.get("surge_plus", 0),
-                        w.get("surge_tags", []), w.get("pierce_x", 0), w.get("pierce_tag", ""),
-                        w.get("precision", 0), w.get("critical", 0), w.get("anti_evade", 0), bt)
-        st.caption(f"**{a_unit}** - {weapon_label(w)} - range {w['rng']} - targets {w['target']}")
-        # The keyword checkboxes depend on which options are ticked (an option can add keywords), so the
-        # options are rendered first; the container keeps the keyword checkboxes above them on screen.
-        kw_box = st.container()
-        a_opts = option_inputs([o for o in udata.get("options", [])
-                                if o["side"] == "attack" and rules.matches_weapon(o, w)],
-                               f"a_{a_unit}", a_state, d_size, d_tags)
-        kws = rules.weapon_keywords(w, a_opts)   # weapon keywords + keywords from ticked options
-        weapon.concentrated_fire = rules.keyword_value(kws, "concentrated fire", min)
-        with kw_box:
-            if rules.find_keyword(kws, "long range"):
-                long_range = st.checkbox("Long Range (target beyond normal range: -1 to hit)", key=f"a_lr_{wk}",
-                                         help="This weapon has a Long Range keyword. Tick when firing at long range: "
-                                              "the Hit roll is 1 harder (e.g. 3+ becomes 4+).")
-            bf_kw = rules.find_keyword(kws, "burst fire")
-            if bf_kw:
-                burst_dice = rules.keyword_value(kws, "burst fire")
-                burst_fire = st.checkbox(f"{bf_kw}: target within Burst Fire range (+{burst_dice} RoA per model)",
-                                         key=f"a_bf_{wk}",
-                                         help="This weapon has a Burst Fire keyword. Tick when firing within "
-                                              "Burst Fire range: the RoA increases by the number in brackets.")
-            if weapon.concentrated_fire:
-                st.caption(f"{rules.find_keyword(kws, 'concentrated fire')}: at most {weapon.concentrated_fire} "
-                           f"model(s) can be destroyed by this attack; excess damage is ignored.")
-            # FLAMER TEMPLATE: FM models use the template instead of rolling their RoA, so they leave the
-            # normal pool; the template adds FT dice (one per unit under it).
-            # Total dice = (models - FM) x RoA + FT.
-            if w.get("flamer") or rules.find_keyword(kws, "flamer template"):
-                c1, c2 = st.columns(2)
-                flamer_models = c1.number_input(
-                    "Models using the Flamer Template", 0, int(models), min(1, int(models)),
-                    key=f"a_fm_{wk}_{models}",
-                    help="These models don't roll their regular RoA; they use the template instead.")
-                flamer_units = c2.number_input(
-                    "FT: units under the Flamer Template", 0, 30, 1, key=f"a_ft_{wk}",
-                    help="Each unit under the template adds one attack die and one surge die.")
-                weapon.models = int(models) - int(flamer_models)
-                flamer_flat = int(flamer_units) if flamer_models else 0
-                st.caption(f"Flamer Template: {weapon.models} model(s) x RoA + {flamer_flat} template dice; "
-                           f"surge result +{flamer_flat} (if the weapon surges against the target).")
+        # SIDEARM weapons are fired in the same attack as the main weapon: tick the ones to add.
+        sidearms = [x for x in all_w if x["name"] != w["name"] and x["phase"] == w["phase"]
+                    and rules.find_keyword(x.get("keywords", []), "sidearm")]
+        if sidearms:
+            st.markdown("**Sidearm weapons** (fired in the same attack as the weapon above)")
+        for sw in sidearms:
+            if st.checkbox(f"Also fire: {sw['name']}", key=f"a_sa_{a_unit}_{sw['name']}",
+                           help=weapon_label(sw)):
+                with st.container(border=True):
+                    extra = configure_weapon(sw, udata, a_unit, f"a_{a_unit}_sa_{sw['name']}",
+                                             a_state, d_size, d_tags)
+                entries.append(extra)
+                a_opts += extra["opts"]
 
     st.markdown("**Tactical cards / other buffs**")
     atk_cards = st.multiselect("Attacker cards", cards_for("attacker", a_faction), key=f"a_cards_{a_faction}",
-                               help="Shows your faction's cards plus Generic ones. Cards that don't match the weapon type (ranged/melee) or the unit's Size are ignored. Edit cards.json to add more.")
+                               help="Shows your faction's cards plus Generic ones. Cards apply to every weapon in the attack, Sidearms included. Cards that don't match the weapon type (ranged/melee) or the unit's Size are ignored. Edit cards.json to add more.")
     with st.expander("Custom attacker modifiers"):
         c1, c2 = st.columns(2)
         ca_hit = c1.number_input("Hit modifier (+ = easier)", -4, 4, 0, key="ca_hit")
@@ -316,21 +348,21 @@ def_used, def_skipped = usable("defender", def_cards, d_size)
 d_opts_used = [o for o in d_opts if rules.phase_ok(o, a_phase)]
 d_opts_skipped = [o["name"] for o in d_opts if not rules.phase_ok(o, a_phase)]
 
-atk_effects = ([rules.option_effects(o, d_size) for o in a_opts]
-               + ([{"hit_mod": -1}] if long_range else [])
-               + ([{"bonus_dice_per_model": burst_dice}] if burst_fire else [])
-               + ([{"bonus_dice_flat": flamer_flat, "surge_bonus": flamer_flat}] if flamer_flat else [])
-               + [CARDS["attacker"][c]["effects"] for c in atk_used]
-               + [{"hit_mod": ca_hit, "bonus_dice_per_model": ca_dpm, "bonus_dice_flat": ca_flat, "dmg_mod": ca_dmg,
-                   "surge_bonus": ca_sb, "reroll_hits": ca_rr, "precision": ca_pr, "critical": ca_cr, "anti_evade": ca_ae}])
+# Cards and custom modifiers apply to every weapon in the attack (main weapon and Sidearms alike).
+shared_effects = ([CARDS["attacker"][c]["effects"] for c in atk_used]
+                  + [{"hit_mod": ca_hit, "bonus_dice_per_model": ca_dpm, "bonus_dice_flat": ca_flat, "dmg_mod": ca_dmg,
+                      "surge_bonus": ca_sb, "reroll_hits": ca_rr, "precision": ca_pr, "critical": ca_cr, "anti_evade": ca_ae}])
+attack_mods = [combine(e["effects"] + shared_effects, AttackMods) for e in entries]
+atk_mods = attack_mods[0]
 def_effects = ([rules.option_effects(o, d_size) for o in d_opts_used]
                + [CARDS["defender"][c]["effects"] for c in def_used]
                + [{"armour_mod": cd_arm, "evade_mod": cd_eva, "grant_evade": cd_ge, "damage_reduction": cd_dr,
                    "reroll_armour": cd_rr, "shield_bonus": cd_sh, "tough": cd_to, "dodge": cd_do,
                    "total_reduction": cd_tr, "attack_pool_reduction": cd_ap, "ignore_surge": cd_is}])
-atk_mods, def_mods = combine(atk_effects, AttackMods), combine(def_effects, DefendMods)
+def_mods = combine(def_effects, DefendMods)
 
-res = simulate(weapon, defender, atk_mods, def_mods, n=N_SIMS, seed=seed)
+res = simulate_attacks([(e["weapon"], m) for e, m in zip(entries, attack_mods)], defender, def_mods,
+                       n=N_SIMS, seed=seed)
 meta = res["meta"]
 
 if atk_skipped or def_skipped or d_opts_skipped:
@@ -347,14 +379,20 @@ m2.metric("Average models killed", f"{kills.mean():.2f}")
 m3.metric("P(at least 1 kill)", f"{(kills >= 1).mean():.1%}")
 m4.metric("P(unit wiped)", f"{(kills >= d_models).mean():.1%}")
 
-kw = [f"{n} {meta[k_]}" for n, k_ in [("Precision", "precision"), ("Critical Hit", "critical"),
-                                      ("Tough", "tough"), ("Dodge", "dodge"),
-                                      ("Concentrated Fire", "concentrated_fire")] if meta[k_]]
-st.caption(
-    f"Effective numbers: Attack pool **{meta['pool']}** dice - Hit **{meta['hit_target']}+** - "
-    f"Armour **{tn(meta['armour_target'])}** - Evade **{'off' if meta['evade_target'] is None else tn(meta['evade_target'])}** - "
-    f"Surge **{meta['surge_die']}** - Damage per die **{meta['per_die_damage']}** - "
-    f"First model HP incl. Shield **{meta['first_model_hp']}**" + (f" - Keywords: {', '.join(kw)}" if kw else ""))
+for i, m in enumerate(meta["weapons"]):
+    kw = [f"{n} {m[k_]}" for n, k_ in [("Precision", "precision"), ("Critical Hit", "critical"),
+                                       ("Tough", "tough"), ("Dodge", "dodge"),
+                                       ("Concentrated Fire", "concentrated_fire")] if m[k_]]
+    lead = ("Effective numbers" if len(meta["weapons"]) == 1
+            else f"{'Main weapon' if i == 0 else 'Sidearm'} ({m['name']})")
+    st.caption(
+        f"{lead}: Attack pool **{m['pool']}** dice - Hit **{m['hit_target']}+** - "
+        f"Armour **{tn(m['armour_target'])}** - Evade **{'off' if m['evade_target'] is None else tn(m['evade_target'])}** - "
+        f"Surge **{m['surge_die']}** - Damage per die **{m['per_die_damage']}**"
+        + (f" - Keywords: {', '.join(kw)}" if kw else ""))
+st.caption(f"First model HP incl. Shield **{meta['first_model_hp']}**"
+           + (" - weapons resolve in order (main first); Concentrated Fire only limits its own weapon"
+              if len(meta["weapons"]) > 1 else ""))
 
 c1, c2 = st.columns(2)
 with c1:
@@ -370,7 +408,7 @@ with c2:
 
 c1, c2 = st.columns(2)
 with c1:
-    st.markdown("**Average dice at each stage**")
+    st.markdown("**Average dice at each stage** (all weapons added together)")
     stages = pd.DataFrame({
         "Stage": ["Attack Pool", "Hits (after Precision)", "Bypass (Surge + Critical)", "Armour saved",
                   "Evaded", "Damage Pool"],
@@ -388,11 +426,12 @@ with st.expander("Damage percentiles"):
     pct = np.percentile(dmg_arr, [5, 25, 50, 75, 95])
     st.write(pd.DataFrame({"Percentile": ["5th", "25th", "median", "75th", "95th"], "Damage": pct}))
 with st.expander("What is applied (unit options, cards and notes)"):
-    for side, opts in (("attacker", a_opts), ("defender", d_opts_used)):
+    for side, opts in (("attacker", list({o["name"]: o for o in a_opts}.values())), ("defender", d_opts_used)):
         for o in opts:
             st.markdown(f"- **{o['name']}** ({side}, {o.get('kind', 'option')}): {o.get('note', 'no note')}")
     for side, used in (("attacker", atk_used), ("defender", def_used)):
         for c in used:
             st.markdown(f"- **{c}** ({side} card): {CARDS[side][c].get('note', 'no note')}")
 with st.expander("Active modifiers"):
-    st.json({"attacker": atk_mods.__dict__, "defender": def_mods.__dict__})
+    st.json({"attacker": {e["weapon"].name: m.__dict__ for e, m in zip(entries, attack_mods)},
+             "defender": def_mods.__dict__})
