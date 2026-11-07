@@ -2243,7 +2243,7 @@
       "evade": 5,
       "hp": 1,
       "shield": 0,
-      "models_default": 12,
+      "models_default": 18,
       "models_max": 18,
       "size": 1,
       "weapons": [
@@ -2321,7 +2321,7 @@
       "evade": 5,
       "hp": 1,
       "shield": 0,
-      "models_default": 12,
+      "models_default": 18,
       "models_max": 18,
       "size": 1,
       "weapons": [
