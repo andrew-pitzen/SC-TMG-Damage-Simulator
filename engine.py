@@ -235,6 +235,9 @@ def _roll_attack(weapon: Weapon, defender: Defender, atk: AttackMods, dfn: Defen
     if surge_die == "None" and atk.grant_surge_die:
         surge_die, surge_plus = atk.grant_surge_die, atk.grant_surge_plus
         surge_tags = list(atk.grant_surge_tags) or surge_tags
+    elif surge_die != "None" and atk.grant_surge_tags:
+        # the weapon already surges: the option only adds Surge Types (e.g. Shredding Claws)
+        surge_tags = sorted(set(surge_tags) | set(atk.grant_surge_tags))
     surge_tags_n = {norm_tag(t) for t in surge_tags}
     surge_applies = (surge_die != "None" and not dfn.ignore_surge and bool(surge_tags_n & tags))
     if surge_applies:
