@@ -66,6 +66,7 @@ class Weapon:
     bt: int = 0                # Blast Template: units under the template (S Dice "BT" = this value)
     concentrated_fire: int = 0 # CONCENTRATED FIRE (X): max models destroyed (0 = off)
     name: str = ""             # display only (reported back in meta["weapons"])
+    auto_hit: bool = False     # every die in the pool is a hit (no Hit roll, so Precision is moot)
 
 
 @dataclass
@@ -222,11 +223,15 @@ def _roll_attack(weapon: Weapon, defender: Defender, atk: AttackMods, dfn: Defen
     attack_pool = np.full(n, pool, dtype=np.int64)
 
     # 2. Roll to hit, then PRECISION promotes failed dice to hits
-    hit_target = clamp_target(weapon.hit - atk.hit_mod)
-    hits = roll_pool(attack_pool, hit_target, atk.reroll_hits, rng)
     precision = max(weapon.precision, atk.precision)
-    if precision:
-        hits = hits + np.minimum(precision, attack_pool - hits)
+    if weapon.auto_hit:        # AUTO-HIT: no Hit roll, every die hits
+        hit_target = None
+        hits = attack_pool.copy()
+    else:
+        hit_target = clamp_target(weapon.hit - atk.hit_mod)
+        hits = roll_pool(attack_pool, hit_target, atk.reroll_hits, rng)
+        if precision:
+            hits = hits + np.minimum(precision, attack_pool - hits)
 
     # 3. Surge + Critical Hit (both bypass armour; Dodge reduces what they move)
     surge_die, surge_plus, surge_tags = weapon.surge_die, weapon.surge_plus, list(weapon.surge_tags)
@@ -310,7 +315,7 @@ def simulate_attacks(attacks: List[tuple], defender: Defender, dfn: DefendMods |
                      n: int = N_DEFAULT, seed: int | None = None) -> Dict[str, np.ndarray]:
     """Several weapons fired in ONE attack (a main weapon plus Sidearm weapons).
 
-    `attacks` is a list of (Weapon, AttackMods | None). Each weapon rolls its own pool through
+    `attacks` is a list of (Weapon, AttackMods | None[, DefendMods | None]). Each weapon rolls its own pool through
     Hit, Surge, Armour and Evade. Their damage is then added together and casualties are worked
     out once, weapon by weapon in list order: TOTAL damage reduction is taken off once, the first
     model carries the Shield once, and CONCENTRATED FIRE limits only the weapon that has it (the
@@ -320,7 +325,15 @@ def simulate_attacks(attacks: List[tuple], defender: Defender, dfn: DefendMods |
     dfn = dfn or DefendMods()
     rng = np.random.default_rng(seed)
     tags = {norm_tag(t) for t in defender.tags}
-    parts = [_roll_attack(w, defender, a or AttackMods(), dfn, n, rng, tags) for w, a in attacks]
+    # Each entry is (Weapon, AttackMods | None) or (Weapon, AttackMods | None, DefendMods | None).
+    # The optional third item is the defender modifiers that apply to THAT weapon's rolls (armour,
+    # evade, tough, dodge, ...). Attack-wide numbers (total damage reduction, HP / Shield bonus)
+    # always come from the shared `dfn`.
+    parts = []
+    for item in attacks:
+        w, a = item[0], item[1]
+        d = item[2] if len(item) > 2 and item[2] is not None else dfn
+        parts.append(_roll_attack(w, defender, a or AttackMods(), d, n, rng, tags))
 
     stages = {k: sum(p[k] for p in parts) for k in _STAGE_KEYS}
 

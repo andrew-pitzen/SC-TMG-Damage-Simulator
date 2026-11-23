@@ -126,6 +126,12 @@
       ]
     },
     "Goliath": {
+      "impact": {
+        "dice": 4,
+        "hit": 3,
+        "dmg": 1,
+        "per_model": true
+      },
       "tags": [
         "Armoured",
         "Mechanical",
@@ -425,6 +431,7 @@
         },
         {
           "name": "Veteran of Tarsonis",
+          "scope": "all",
           "kind": "upgrade",
           "side": "defend",
           "effects": {
@@ -436,6 +443,7 @@
         },
         {
           "name": "Kinetic Foam",
+          "scope": "all",
           "kind": "upgrade",
           "side": "defend",
           "effects": {
@@ -609,6 +617,12 @@
       ]
     },
     "Nova (Assault Mode)": {
+      "impact": {
+        "dice": 4,
+        "hit": 4,
+        "dmg": 1,
+        "per_model": true
+      },
       "tags": [
         "Biological",
         "Psionic",
@@ -658,6 +672,7 @@
       "options": [
         {
           "name": "Super Stimpack",
+          "scope": "all",
           "kind": "ability",
           "side": "attack",
           "effects": {
@@ -709,6 +724,7 @@
       "options": [
         {
           "name": "Super Stimpack",
+          "scope": "all",
           "kind": "ability",
           "side": "attack",
           "effects": {
@@ -826,6 +842,12 @@
       "weapons": []
     },
     "Siege Tank": {
+      "impact": {
+        "dice": 4,
+        "hit": 3,
+        "dmg": 1,
+        "per_model": true
+      },
       "tags": [
         "Armoured",
         "Mechanical",
@@ -902,6 +924,7 @@
       "options": [
         {
           "name": "Heavy Plating",
+          "scope": "all",
           "kind": "passive",
           "side": "defend",
           "effects": {
@@ -917,6 +940,7 @@
         },
         {
           "name": "Aftershock Rounds",
+          "scope": "all",
           "kind": "passive",
           "side": "attack",
           "effects": {
@@ -1133,6 +1157,12 @@
       ]
     },
     "Artanis": {
+      "impact": {
+        "dice": 6,
+        "hit": 4,
+        "dmg": 1,
+        "per_model": true
+      },
       "tags": [
         "Biological",
         "Psionic",
@@ -1218,6 +1248,12 @@
       ]
     },
     "Immortal": {
+      "impact": {
+        "dice": 4,
+        "hit": 3,
+        "dmg": 1,
+        "per_model": true
+      },
       "tags": [
         "Armoured",
         "Mechanical",
@@ -1352,6 +1388,12 @@
       ]
     },
     "Khalai Praetor Guard": {
+      "impact": {
+        "dice": 3,
+        "hit": 4,
+        "dmg": 1,
+        "per_model": true
+      },
       "tags": [
         "Biological",
         "Light",
@@ -1396,6 +1438,7 @@
         },
         {
           "name": "Precognition",
+          "scope": "all",
           "kind": "passive",
           "side": "defend",
           "effects": {
@@ -1615,6 +1658,12 @@
       ]
     },
     "Zealot": {
+      "impact": {
+        "dice": 3,
+        "hit": 4,
+        "dmg": 1,
+        "per_model": true
+      },
       "tags": [
         "Biological",
         "Light",
@@ -1644,6 +1693,15 @@
       ],
       "options": [
         {
+          "name": "My Life for Aiur",
+          "kind": "upgrade",
+          "side": "attack",
+          "effects": {},
+          "impact_dice": 1,
+          "phase": "melee",
+          "note": "Increases the number of Impact rolls: +1 Impact die per model."
+        },
+        {
           "name": "We Stand As One",
           "kind": "passive",
           "side": "attack",
@@ -1657,6 +1715,18 @@
       ]
     },
     "Zeratul": {
+      "impact": {
+        "dice": 4,
+        "hit": 4,
+        "dmg": 1,
+        "per_model": false
+      },
+      "auto_hits": {
+        "label": "Shadow Strike",
+        "phase": "melee",
+        "dice": 4,
+        "dmg": 1
+      },
       "tags": [
         "Biological",
         "Psionic",
@@ -1751,6 +1821,12 @@
       ]
     },
     "Corpser (Roach)": {
+      "impact": {
+        "dice": 3,
+        "hit": 4,
+        "dmg": 1,
+        "per_model": true
+      },
       "tags": [
         "Armoured",
         "Biological",
@@ -1809,6 +1885,12 @@
       ]
     },
     "Defiler": {
+      "impact": {
+        "dice": 4,
+        "hit": 4,
+        "dmg": 1,
+        "per_model": true
+      },
       "tags": [
         "Biological",
         "Light",
@@ -1901,6 +1983,12 @@
       ]
     },
     "Kerrigan": {
+      "impact": {
+        "dice": 4,
+        "hit": 4,
+        "dmg": 1,
+        "per_model": true
+      },
       "tags": [
         "Biological",
         "Psionic",
@@ -1957,6 +2045,12 @@
       ]
     },
     "Kerrigan Swarm Raptor": {
+      "impact": {
+        "dice": 2,
+        "hit": 5,
+        "dmg": 1,
+        "per_model": true
+      },
       "tags": [
         "Biological",
         "Light",
@@ -2005,6 +2099,12 @@
       "weapons": []
     },
     "Queen": {
+      "impact": {
+        "dice": 4,
+        "hit": 3,
+        "dmg": 1,
+        "per_model": true
+      },
       "tags": [
         "Biological",
         "Psionic",
@@ -2058,6 +2158,12 @@
       ]
     },
     "Raptor (Zergling)": {
+      "impact": {
+        "dice": 1,
+        "hit": 5,
+        "dmg": 1,
+        "per_model": true
+      },
       "tags": [
         "Biological",
         "Light",
@@ -2117,6 +2223,12 @@
       ]
     },
     "Ravager": {
+      "impact": {
+        "dice": 2,
+        "hit": 4,
+        "dmg": 1,
+        "per_model": true
+      },
       "tags": [
         "Armoured",
         "Biological",
@@ -2156,6 +2268,12 @@
       ]
     },
     "Roach": {
+      "impact": {
+        "dice": 2,
+        "hit": 4,
+        "dmg": 1,
+        "per_model": true
+      },
       "tags": [
         "Armoured",
         "Biological",
@@ -2234,6 +2352,12 @@
       ]
     },
     "Swarmling (Zergling)": {
+      "impact": {
+        "dice": 1,
+        "hit": 5,
+        "dmg": 1,
+        "per_model": true
+      },
       "tags": [
         "Biological",
         "Light",
@@ -2259,6 +2383,12 @@
       ]
     },
     "Vile (Roach)": {
+      "impact": {
+        "dice": 1,
+        "hit": 4,
+        "dmg": 1,
+        "per_model": true
+      },
       "tags": [
         "Armoured",
         "Biological",
@@ -2312,6 +2442,12 @@
       ]
     },
     "Vileling (Zergling)": {
+      "impact": {
+        "dice": 1,
+        "hit": 5,
+        "dmg": 1,
+        "per_model": true
+      },
       "tags": [
         "Biological",
         "Light",
@@ -2337,6 +2473,12 @@
       ]
     },
     "Zagara": {
+      "impact": {
+        "dice": 6,
+        "hit": 3,
+        "dmg": 1,
+        "per_model": true
+      },
       "tags": [
         "Biological",
         "Psionic",
@@ -2390,6 +2532,12 @@
       ]
     },
     "Zergling": {
+      "impact": {
+        "dice": 1,
+        "hit": 5,
+        "dmg": 1,
+        "per_model": true
+      },
       "tags": [
         "Biological",
         "Light",

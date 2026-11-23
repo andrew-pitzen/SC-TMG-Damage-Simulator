@@ -17,15 +17,101 @@ units.json conventions
       situational true                   needs a board condition the app cannot see (off by default)
       auto      true                     no checkbox: applied automatically whenever 'when' is met
       note      free text
+      scope     "all"  -> applies to EVERY weapon (main weapon, Sidearms) and to Impact rolls
+                "first" (default for defender options and for cards) -> main weapon only
+                attack options without a scope stay per-weapon (ticked under the weapon they work with);
+                with "all" they are shown once and applied to every weapon in the attack
+      impact_dice  N   attack option: +N Impact dice per model (shown in the Impact section only)
+  unit["auto_hits"]: [{"label": "Shadow Strike", "phase": "melee", "dice": 4, "dmg": 1, "verify": "..."}]
+                     abilities whose dice hit automatically (no Hit roll); each is its own extra attack with
+                     its own defender box. A single object instead of a list also works.
+  unit["impact"]   : {"dice": 1, "hit": 4, "dmg": 1, "per_model": true, "verify": "..."}  Impact rolls for
+                     a close combat attack: a separate extra attack, no attacker keywords/cards, only
+                     defender effects with scope "all".
+  cards.json attacker cards may set "targets": ["impact"] -> the card affects ONLY Impact rolls (no weapon
+                     picker; ignored while Impact is off).
   effects may contain "dmg_set_target_size": true  -> damage equals the target's Size (min 1)
 """
 from __future__ import annotations
 
 import re
 
-from engine import norm_tag
+from engine import DefendMods, combine, norm_tag
 
 KIND_LABEL = {"passive": "Passive", "upgrade": "Upgrade", "ability": "Ability"}
+
+# Defender numbers that belong to the attack as a whole (casualties), never to one weapon.
+ATTACK_WIDE = {"total_reduction", "hp_bonus", "shield_bonus"}
+
+
+# --------------------------------------------------------------------------- #
+# Scope: does a card / option affect only the main weapon, or every weapon?
+# --------------------------------------------------------------------------- #
+def scope_of(item: dict, default: str = "first") -> str:
+    return item.get("scope", default)
+
+
+def is_all_scope(item: dict) -> bool:
+    return item.get("scope") == "all"
+
+
+def auto_hit_list(unit: dict) -> list:
+    """The unit's auto-hit abilities as a list. units.json may hold one object or a list of them."""
+    ah = unit.get("auto_hits")
+    if not ah:
+        return []
+    return list(ah) if isinstance(ah, list) else [ah]
+
+
+def is_impact_option(opt: dict) -> bool:
+    return "impact_dice" in opt
+
+
+def card_targets(card: dict) -> list:
+    """Attack ids a card is fixed to (e.g. ["impact"]); [] for ordinary cards."""
+    return list(card.get("targets", []))
+
+
+def card_label(name: str, card: dict) -> str:
+    if "impact" in card_targets(card):
+        return f"{name}  [Impact only]"
+    return f"{name}  [all weapons]" if is_all_scope(card) else name
+
+
+def defend_mods_by_scope(items) -> tuple:
+    """items: [(scope, effects dict)] with scope "all" or "first".
+
+    Returns (shared, main, other):
+      shared - attack-wide mods used for casualties (all-scope effects + total reduction / HP / Shield
+               bonus from every effect)
+      main   - what the main weapon's rolls see (all-scope + first-scope effects)
+      other  - what Sidearms and Impact rolls see (all-scope effects only)
+    """
+    all_fx = [e for s, e in items if s == "all"]
+    first_fx = [e for s, e in items if s != "all"]
+    wide = [{k: v for k, v in e.items() if k in ATTACK_WIDE} for e in first_fx]
+    return (combine(all_fx + wide, DefendMods),
+            combine(all_fx + first_fx, DefendMods),
+            combine(all_fx, DefendMods))
+
+
+def defend_mods_by_target(items, target_ids) -> tuple:
+    """Defender effects worked out per attack in the pool (main weapon, each Sidearm, Impact).
+
+    items: [(scope, effects dict, assigned target ids)]. A scope "all" item reaches every target;
+    any other item reaches only the targets listed in `assigned`.
+
+    Returns (shared, {target_id: DefendMods}):
+      shared - attack-wide mods used for casualties (all-scope effects + total reduction / HP / Shield
+               bonus from every effect, wherever the card was assigned)
+      per    - what that target's own rolls see (all-scope + the effects assigned to it)
+    """
+    all_fx = [e for s, e, _ in items if s == "all"]
+    scoped = [(e, a) for s, e, a in items if s != "all"]
+    wide = [{k: v for k, v in e.items() if k in ATTACK_WIDE} for e, _ in scoped]
+    shared = combine(all_fx + wide, DefendMods)
+    per = {t: combine(all_fx + [e for e, a in scoped if t in a], DefendMods) for t in target_ids}
+    return shared, per
 
 
 # --------------------------------------------------------------------------- #
@@ -108,6 +194,8 @@ def phase_ok(opt: dict, attack_phase: str) -> bool:
 
 
 def matches_weapon(opt: dict, weapon: dict | None) -> bool:
+    if is_impact_option(opt):
+        return False          # Impact upgrades are shown in the Impact section, not under a weapon
     if weapon is None:
         return True
     if not phase_ok(opt, weapon["phase"]):

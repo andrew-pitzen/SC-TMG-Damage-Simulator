@@ -70,11 +70,11 @@ def toggle_inputs(unit, prefix):
     return state
 
 
-def option_inputs(options, prefix, own_state, target_size, target_tags):
+def option_inputs(options, prefix, own_state, target_size, target_tags, heading="Unit passives & upgrades"):
     """Render a checkbox per option. Returns the options that are ticked and whose condition is met."""
     chosen = []
-    if options:
-        st.markdown("**Unit passives & upgrades**")
+    if options and heading:
+        st.markdown(f"**{heading}**")
     for o in options:
         met = rules.when_met(o, own_state, target_size, target_tags)
         if o.get("auto"):
@@ -122,7 +122,8 @@ def configure_weapon(w, udata, a_unit, opt_prefix, a_state, target_size, target_
     # options are rendered first; the container keeps the keyword checkboxes above them on screen.
     kw_box = st.container()
     opts = option_inputs([o for o in udata.get("options", [])
-                          if o["side"] == "attack" and rules.matches_weapon(o, w)],
+                          if o["side"] == "attack" and rules.matches_weapon(o, w)
+                          and not rules.is_all_scope(o)],   # all-scope options are shown once, below
                          opt_prefix, a_state, target_size, target_tags)
     kws = rules.weapon_keywords(w, opts)   # weapon keywords + keywords from ticked options
     weapon.concentrated_fire = rules.keyword_value(kws, "concentrated fire", min)
@@ -163,6 +164,128 @@ def configure_weapon(w, udata, a_unit, opt_prefix, a_state, target_size, target_
             st.caption(f"Flamer Template: {weapon.models} model(s) x RoA + {flamer_flat} template dice; "
                        f"surge result +{flamer_flat} (if the weapon surges against the target).")
     return {"weapon": weapon, "effects": effects, "opts": opts}
+
+
+def impact_inputs(imp, udata, a_unit, models, a_state, target_size, target_tags):
+    """Impact rolls for a close combat attack: a separate extra attack, rolled like one more weapon.
+
+    Attacker keywords, cards and options never touch it; only defender effects with scope "all" do.
+    `imp` is the unit's "impact" data. Returns (Weapon | None, ticked Impact upgrade options).
+    """
+    ik = f"a_imp_{a_unit}"
+    if not st.checkbox("Impact rolls (separate extra attack; ignores attacker keywords)", key=ik,
+                       help="Rolled like an additional weapon: only defender effects set to apply to all "
+                            "weapons (e.g. Tough, Dodge) affect it. Attacker cards, passives and keywords do not."):
+        return None, []
+    with st.container(border=True):
+        if imp.get("verify"):
+            st.caption(f"Check the numbers: {imp['verify']}")
+        opts = option_inputs([o for o in udata.get("options", [])
+                              if o["side"] == "attack" and rules.is_impact_option(o)],
+                             f"{ik}_opt", a_state, target_size, target_tags, heading="Impact upgrades")
+        per_model = imp.get("dice", 1) + sum(o["impact_dice"] for o in opts)
+        total = per_model * int(models) if imp.get("per_model") else per_model
+        c1, c2, c3 = st.columns(3)
+        dice = c1.number_input("Impact dice (total)", 0, 60, int(total), key=f"{ik}_dice_{total}",
+                               help="Defaults to dice per model x models firing, plus Impact upgrades.")
+        hit = c2.selectbox("Impact Hit", [2, 3, 4, 5, 6], index=[2, 3, 4, 5, 6].index(imp.get("hit", 4)),
+                           key=f"{ik}_hit", format_func=lambda v: f"{v}+")
+        dmg = c3.number_input("Impact DMG", 0, 20, int(imp.get("dmg", 1)), key=f"{ik}_dmg")
+    return Weapon(1, int(dice), hit, int(dmg), name="Impact"), opts
+
+
+def auto_hit_inputs(ah, a_unit):
+    """An ability that adds dice which hit automatically (no Hit roll), e.g. Zeratul's.
+
+    Like Impact it is a separate extra attack: attacker cards and keywords never touch it, and only
+    defender cards can be pointed at it. `ah` is ONE entry of the unit's "auto_hits" list. Returns a Weapon or None.
+    """
+    label = ah.get("label", "Auto-hit attack")
+    key = f"a_auto_{a_unit}_{label}"
+    if not st.checkbox(f"{label} (separate extra attack; every die hits)", key=key,
+                       help="Dice that hit automatically (no Hit roll). Rolled like an extra weapon: attacker cards "
+                            "and keywords do not affect it; defender cards can be assigned to it."):
+        return None
+    with st.container(border=True):
+        if ah.get("verify"):
+            st.caption(f"Check the numbers: {ah['verify']}")
+        c1, c2 = st.columns(2)
+        dice = c1.number_input("Auto-hit dice (total)", 0, 60, int(ah.get("dice", 1)), key=f"{key}_dice")
+        dmg = c2.number_input("Auto-hit DMG", 0, 20, int(ah.get("dmg", 1)), key=f"{key}_dmg")
+    return Weapon(1, int(dice), 2, int(dmg), name=label, auto_hit=True)
+
+
+def custom_attack_box(title, p, help_text):
+    """Free-form attacker modifiers. Returns the effects dict (keys of AttackMods)."""
+    with st.expander(title):
+        st.caption(help_text)
+        c1, c2 = st.columns(2)
+        hit = c1.number_input("Hit modifier (+ = easier)", -4, 4, 0, key=f"{p}_hit")
+        dpm = c2.number_input("Bonus dice per model", -3, 5, 0, key=f"{p}_dpm")
+        flat = c1.number_input("Bonus dice (flat)", -20, 40, 0, key=f"{p}_flat")
+        dmg = c2.number_input("Damage modifier", -3, 5, 0, key=f"{p}_dmg")
+        sb = c1.number_input("Surge result bonus", 0, 5, 0, key=f"{p}_sb")
+        rr = c2.selectbox("Re-roll hits", ["none", "ones", "misses"], key=f"{p}_rr")
+        pr = c1.number_input("Extra PRECISION (X)", 0, 10, 0, key=f"{p}_pr")
+        cr = c2.number_input("Extra CRITICAL HIT (X)", 0, 10, 0, key=f"{p}_cr")
+        ae = c1.number_input("Extra ANTI-EVADE (X)", 0, 4, 0, key=f"{p}_ae")
+    return {"hit_mod": hit, "bonus_dice_per_model": dpm, "bonus_dice_flat": flat, "dmg_mod": dmg,
+            "surge_bonus": sb, "reroll_hits": rr, "precision": pr, "critical": cr, "anti_evade": ae}
+
+
+def custom_defend_box(title, p, help_text, whole_attack=False):
+    """Free-form defender modifiers for ONE attack. Returns the effects dict (keys of DefendMods).
+
+    With whole_attack=True the box also holds the numbers that always apply to the whole attack
+    (Extra Shield, Total damage reduction).
+    """
+    with st.expander(title):
+        st.caption(help_text)
+        c1, c2 = st.columns(2)
+        arm = c1.number_input("Armour modifier (+ = easier)", -4, 4, 0, key=f"{p}_arm")
+        eva = c2.number_input("Evade modifier", -4, 4, 0, key=f"{p}_eva")
+        ge = c1.selectbox("Grant Evade roll at", [0, 2, 3, 4, 5, 6], key=f"{p}_ge",
+                          format_func=lambda v: "none" if v == 0 else f"{v}+")
+        dr = c2.number_input("Damage reduction per die", 0, 5, 0, key=f"{p}_dr")
+        rr = c1.selectbox("Re-roll armour", ["none", "ones", "fails"], key=f"{p}_rr")
+        to = c2.number_input("TOUGH (X)", 0, 10, 0, key=f"{p}_to")
+        do = c1.number_input("DODGE (X)", 0, 10, 0, key=f"{p}_do")
+        ap = c2.number_input("Attack dice removed", 0, 30, 0, key=f"{p}_ap")
+        ig = c1.checkbox("Ignore Surge", key=f"{p}_is")
+        eff = {"armour_mod": arm, "evade_mod": eva, "grant_evade": ge, "damage_reduction": dr,
+               "reroll_armour": rr, "tough": to, "dodge": do, "attack_pool_reduction": ap, "ignore_surge": ig}
+        if whole_attack:
+            sh = c2.number_input("Extra Shield", 0, 20, 0, key=f"{p}_sh")
+            tr = c1.number_input("Total damage reduction", 0, 30, 0, key=f"{p}_tr")
+            eff.update({"shield_bonus": sh, "total_reduction": tr})
+    return eff
+
+
+def usable(side, names, own_size, phase):
+    """Split card names into (usable, ignored) for this attack phase and the unit's Size."""
+    used = []
+    for n in names:
+        c = CARDS[side][n]
+        want = (c.get("when") or {}).get("own_size")
+        if c.get("phase", "any") in ("any", phase) and (want is None or want == own_size):
+            used.append(n)
+    return used, [n for n in names if n not in used]
+
+
+def card_assignment(side, names, target_ids, labels, key):
+    """Let the player pick which attack(s) each card applies to.
+
+    Cards tagged scope "all" reach every attack and need no choice. Other cards default to the main
+    weapon; when there is more than one attack (Sidearms, Impact) a selector appears per card.
+    Returns {card name: [target ids]} for the cards that are not scope "all".
+    """
+    scoped = [n for n in names if not rules.is_all_scope(CARDS[side][n]) and not rules.card_targets(CARDS[side][n])]
+    if len(target_ids) < 2 or not scoped:
+        return {n: ["main"] for n in scoped}
+    st.caption("Choose which attack each card applies to (cards tagged [all weapons] apply to every attack).")
+    sig = "|".join(target_ids)   # the selector resets if the set of attacks changes
+    return {n: st.multiselect(f"{n} - applies to", target_ids, default=["main"], key=f"{key}_{n}_{sig}",
+                              format_func=lambda t: labels[t]) for n in scoped}
 
 
 def swap_sides():
@@ -220,22 +343,10 @@ with right:
     d_opts = option_inputs([o for o in ud.get("options", []) if o["side"] == "defend"],
                            f"d_{k}", d_state, d_size, d_tags)
 
-    st.markdown("**Tactical cards / other buffs**")
-    def_cards = st.multiselect("Defender cards", cards_for("defender", d_faction), key=f"d_cards_{d_faction}")
-    with st.expander("Custom defender modifiers"):
-        c1, c2 = st.columns(2)
-        cd_arm = c1.number_input("Armour modifier (+ = easier)", -4, 4, 0, key="cd_arm")
-        cd_eva = c2.number_input("Evade modifier", -4, 4, 0, key="cd_eva")
-        cd_ge = c1.selectbox("Grant Evade roll at", [0, 2, 3, 4, 5, 6], key="cd_ge",
-                             format_func=lambda v: "none" if v == 0 else f"{v}+")
-        cd_dr = c2.number_input("Damage reduction per die", 0, 5, 0, key="cd_dr")
-        cd_rr = c1.selectbox("Re-roll armour", ["none", "ones", "fails"], key="cd_rr")
-        cd_sh = c2.number_input("Extra Shield", 0, 20, 0, key="cd_sh")
-        cd_to = c1.number_input("TOUGH (X)", 0, 10, 0, key="cd_to")
-        cd_do = c2.number_input("DODGE (X)", 0, 10, 0, key="cd_do")
-        cd_tr = c1.number_input("Total damage reduction", 0, 30, 0, key="cd_tr")
-        cd_ap = c2.number_input("Attack dice removed", 0, 30, 0, key="cd_ap")
-        cd_is = c1.checkbox("Ignore Surge", key="cd_is")
+    # The defender cards are drawn after the attacker block (they need to know which attacks exist:
+    # main weapon, Sidearms, Impact), but this container keeps them in place on screen.
+    def_card_box = st.container()
+    def_custom_box = st.container()   # custom defender modifier boxes, one per attack (filled in later)
 
 # ------------------------------- Attacker ---------------------------------- #
 with left:
@@ -244,6 +355,10 @@ with left:
     a_opts = []      # ticked unit options of every weapon in this attack
     entries = []     # one {"weapon", "effects", "opts"} per weapon fired (main weapon first)
     a_size = 2
+    a_unit = "custom"
+    a_all_opts = []          # ticked unit options that apply to every weapon (scope "all")
+    impact_weapon = None     # Impact rolls, resolved as a separate extra attack
+    auto_weapons = []        # [(target id, Weapon)] auto-hit abilities (e.g. Zeratul), each a separate extra attack
 
     if a_faction == CUSTOM:
         a_phase = "ranged"
@@ -312,20 +427,90 @@ with left:
                 entries.append(extra)
                 a_opts += extra["opts"]
 
+    if a_faction != CUSTOM:
+        a_all_opts = option_inputs([o for o in udata.get("options", [])
+                                    if o["side"] == "attack" and rules.is_all_scope(o)
+                                    and rules.phase_ok(o, a_phase)],
+                                   f"a_{a_unit}_all", a_state, d_size, d_tags,
+                                   heading="Unit abilities that apply to every weapon")
+        a_opts += a_all_opts
+        if a_phase == "melee" and udata.get("impact"):
+            impact_weapon, imp_opts = impact_inputs(udata["impact"], udata, a_unit, main["weapon"].models,
+                                                    a_state, d_size, d_tags)
+            a_opts += imp_opts
+        for ah in rules.auto_hit_list(udata):
+            if rules.phase_ok(ah, a_phase):
+                aw = auto_hit_inputs(ah, a_unit)
+                if aw is not None and aw.roa > 0:
+                    auto_weapons.append((f"auto:{aw.name}", aw))
+    elif a_phase == "melee":
+        if st.checkbox("Impact rolls (separate extra attack; ignores attacker keywords)", key="a_imp_custom"):
+            c1, c2, c3 = st.columns(3)
+            i_dice = c1.number_input("Impact dice (total)", 0, 60, 1, key="a_imp_cd")
+            with c2:
+                i_hit = target_input("Impact Hit", "a_imp_ch", 4)
+            i_dmg = c3.number_input("Impact DMG", 0, 20, 1, key="a_imp_cdm")
+            impact_weapon = Weapon(1, int(i_dice), i_hit, int(i_dmg), name="Impact")
+
+    # The attacks in this pool: the main weapon, each ticked Sidearm, and Impact rolls (defender cards only).
+    entry_ids = ["main"] + [f"sa:{e['weapon'].name}" for e in entries[1:]]
+    impact_on = impact_weapon is not None and impact_weapon.roa > 0
+    def_target_ids_now = entry_ids + (["impact"] if impact_on else []) + [tid for tid, _ in auto_weapons]
+    target_labels = {"main": f"Main weapon ({entries[0]['weapon'].name})",
+                     "impact": "Impact rolls (separate attack)"}
+    target_labels.update({tid: f"{w.name} (separate attack)" for tid, w in auto_weapons})
+    target_labels.update({tid: f"Sidearm ({e['weapon'].name})" for tid, e in zip(entry_ids[1:], entries[1:])})
+
     st.markdown("**Tactical cards / other buffs**")
     atk_cards = st.multiselect("Attacker cards", cards_for("attacker", a_faction), key=f"a_cards_{a_faction}",
-                               help="Shows your faction's cards plus Generic ones. Cards apply to every weapon in the attack, Sidearms included. Cards that don't match the weapon type (ranged/melee) or the unit's Size are ignored. Edit cards.json to add more.")
-    with st.expander("Custom attacker modifiers"):
-        c1, c2 = st.columns(2)
-        ca_hit = c1.number_input("Hit modifier (+ = easier)", -4, 4, 0, key="ca_hit")
-        ca_dpm = c2.number_input("Bonus dice per model", -3, 5, 0, key="ca_dpm")
-        ca_flat = c1.number_input("Bonus dice (flat)", -20, 40, 0, key="ca_flat")
-        ca_dmg = c2.number_input("Damage modifier", -3, 5, 0, key="ca_dmg")
-        ca_sb = c1.number_input("Surge result bonus", 0, 5, 0, key="ca_sb")
-        ca_rr = c2.selectbox("Re-roll hits", ["none", "ones", "misses"], key="ca_rr")
-        ca_pr = c1.number_input("Extra PRECISION (X)", 0, 10, 0, key="ca_pr")
-        ca_cr = c2.number_input("Extra CRITICAL HIT (X)", 0, 10, 0, key="ca_cr")
-        ca_ae = c1.number_input("Extra ANTI-EVADE (X)", 0, 4, 0, key="ca_ae")
+                               format_func=lambda n: rules.card_label(n, CARDS["attacker"][n]),
+                               help="Shows your faction's cards plus Generic ones. A card affects the main weapon unless you pick other "
+                                    "attacks for it (Sidearms) or it is tagged [all weapons]. Attacker cards never affect Impact rolls "
+                                    "or auto-hit abilities, except cards marked [Impact only], which affect only Impact rolls. "
+                                    "Cards that don't match the weapon type (ranged/melee) or the unit's Size are ignored. "
+                                    "Edit cards.json to add more or to change a card's 'scope'.")
+    atk_used, atk_skipped = usable("attacker", atk_cards, a_size, a_phase)
+    # Cards fixed to one kind of attack (e.g. "impact": Malignant Creep) only work while that attack is on.
+    for c in list(atk_used):
+        if any(t not in def_target_ids_now for t in rules.card_targets(CARDS["attacker"][c])):
+            atk_used.remove(c)
+            atk_skipped.append(c)
+    atk_assign = card_assignment("attacker", atk_used, entry_ids, target_labels, "a_cardto")
+    custom_first = custom_attack_box("Custom Attack Modifiers - First Gun", "ca",
+                                     "Applies to the main weapon (the first gun) only.")
+    # One box per Sidearm that is actually being fired, so units with several Sidearms are covered.
+    custom_sides = {}
+    for i, e in enumerate(entries[1:], start=1):
+        sa_name = e["weapon"].name
+        custom_sides[i] = custom_attack_box(f"Custom Attack Modifiers - Sidearm: {sa_name}", f"cs_{a_unit}_{sa_name}",
+                                            f"Applies to {sa_name} only (it is fired in the same attack as the main weapon).")
+
+# The defender's cards come after the attacker block because they can target Sidearms, Impact rolls
+# and auto-hit abilities.
+def_target_ids = entry_ids + (["impact"] if impact_on else []) + [tid for tid, _ in auto_weapons]
+with def_card_box:
+    st.markdown("**Tactical cards / other buffs**")
+    def_cards = st.multiselect("Defender cards", cards_for("defender", d_faction), key=f"d_cards_{d_faction}",
+                               format_func=lambda n: rules.card_label(n, CARDS["defender"][n]),
+                               help="A card affects the attacker's main weapon unless you pick other attacks for it (Sidearms, Impact rolls, "
+                                    "auto-hit abilities) or it is tagged [all weapons], which applies to every attack including those. "
+                                    "Total damage reduction, HP and Shield bonuses always apply to the whole attack.")
+    def_used, def_skipped = usable("defender", def_cards, d_size, a_phase)
+    def_assign = card_assignment("defender", def_used, def_target_ids, target_labels, "d_cardto")
+
+# One custom defender box per attack (main weapon, each Sidearm, Impact, auto-hit abilities), like the
+# attacker's boxes. Extra Shield and Total damage reduction sit in the first box but cover the whole attack.
+custom_defs = {}
+with def_custom_box:
+    for tid in def_target_ids:
+        if len(def_target_ids) == 1:
+            title, note = "Custom defender modifiers", "Applies to this attack."
+        else:
+            title = f"Custom Defender Modifiers - {target_labels[tid]}"
+            note = f"Applies only to the rolls of: {target_labels[tid]}."
+        if tid == "main":
+            note += " Extra Shield and Total damage reduction always apply to the whole attack."
+        custom_defs[tid] = custom_defend_box(title, f"cd_{a_unit}_{tid}", note, whole_attack=(tid == "main"))
 
 # ------------------------------- Run --------------------------------------- #
 seed = None  # fresh random results on every run
@@ -333,36 +518,43 @@ seed = None  # fresh random results on every run
 defender = Defender(d_tags, armour, evade, evade_on, d_hp, d_shield, d_models, d_vis, d_exist)
 
 
-def usable(side, names, own_size):
-    used = []
-    for n in names:
-        c = CARDS[side][n]
-        want = (c.get("when") or {}).get("own_size")
-        if c.get("phase", "any") in ("any", a_phase) and (want is None or want == own_size):
-            used.append(n)
-    return used, [n for n in names if n not in used]
-
-
-atk_used, atk_skipped = usable("attacker", atk_cards, a_size)
-def_used, def_skipped = usable("defender", def_cards, d_size)
 d_opts_used = [o for o in d_opts if rules.phase_ok(o, a_phase)]
 d_opts_skipped = [o["name"] for o in d_opts if not rules.phase_ok(o, a_phase)]
 
-# Cards and custom modifiers apply to every weapon in the attack (main weapon and Sidearms alike).
-shared_effects = ([CARDS["attacker"][c]["effects"] for c in atk_used]
-                  + [{"hit_mod": ca_hit, "bonus_dice_per_model": ca_dpm, "bonus_dice_flat": ca_flat, "dmg_mod": ca_dmg,
-                      "surge_bonus": ca_sb, "reroll_hits": ca_rr, "precision": ca_pr, "critical": ca_cr, "anti_evade": ca_ae}])
-attack_mods = [combine(e["effects"] + shared_effects, AttackMods) for e in entries]
+# SCOPE. Cards tagged scope "all" reach every attack. Other cards reach only the attacks the player
+# picked for them (default: the main weapon). Each Sidearm also gets its own custom box. Impact rolls
+# are a separate extra attack: no attacker effects at all; defender cards can target them.
+all_attack_fx = ([CARDS["attacker"][c]["effects"] for c in atk_used if rules.is_all_scope(CARDS["attacker"][c])]
+                 + [rules.option_effects(o, d_size) for o in a_all_opts])
+attack_mods = []
+for i, e in enumerate(entries):
+    picked = [CARDS["attacker"][c]["effects"] for c in atk_used
+              if c in atk_assign and entry_ids[i] in atk_assign[c]]
+    extra = picked + [custom_first if i == 0 else custom_sides[i]]
+    attack_mods.append(combine(e["effects"] + all_attack_fx + extra, AttackMods))
 atk_mods = attack_mods[0]
-def_effects = ([rules.option_effects(o, d_size) for o in d_opts_used]
-               + [CARDS["defender"][c]["effects"] for c in def_used]
-               + [{"armour_mod": cd_arm, "evade_mod": cd_eva, "grant_evade": cd_ge, "damage_reduction": cd_dr,
-                   "reroll_armour": cd_rr, "shield_bonus": cd_sh, "tough": cd_to, "dodge": cd_do,
-                   "total_reduction": cd_tr, "attack_pool_reduction": cd_ap, "ignore_surge": cd_is}])
-def_mods = combine(def_effects, DefendMods)
 
-res = simulate_attacks([(e["weapon"], m) for e, m in zip(entries, attack_mods)], defender, def_mods,
-                       n=N_SIMS, seed=seed)
+def_items = ([(rules.scope_of(o), rules.option_effects(o, d_size), ["main"]) for o in d_opts_used]
+             + [(rules.scope_of(CARDS["defender"][c]), CARDS["defender"][c]["effects"], def_assign.get(c, ["main"]))
+                for c in def_used]
+             # each custom box applies to its own attack (its Extra Shield / Total reduction stay attack-wide)
+             + [("first", custom_defs[t], [t]) for t in def_target_ids])
+def_mods, def_by_target = rules.defend_mods_by_target(def_items, def_target_ids)
+
+attacks = [(e["weapon"], m, def_by_target[entry_ids[i]])
+           for i, (e, m) in enumerate(zip(entries, attack_mods))]
+impact_idx = None
+if impact_on:
+    impact_idx = len(attacks)
+    impact_mods = combine([CARDS["attacker"][c]["effects"] for c in atk_used
+                           if "impact" in rules.card_targets(CARDS["attacker"][c])], AttackMods)
+    attacks.append((impact_weapon, impact_mods, def_by_target["impact"]))
+auto_idx = set()
+for tid, aw in auto_weapons:
+    auto_idx.add(len(attacks))
+    attacks.append((aw, AttackMods(), def_by_target[tid]))
+
+res = simulate_attacks(attacks, defender, def_mods, n=N_SIMS, seed=seed)
 meta = res["meta"]
 
 if atk_skipped or def_skipped or d_opts_skipped:
@@ -384,9 +576,12 @@ for i, m in enumerate(meta["weapons"]):
                                        ("Tough", "tough"), ("Dodge", "dodge"),
                                        ("Concentrated Fire", "concentrated_fire")] if m[k_]]
     lead = ("Effective numbers" if len(meta["weapons"]) == 1
+            else "Impact rolls (separate attack)" if i == impact_idx
+            else f"{m['name']} (separate attack)" if i in auto_idx
             else f"{'Main weapon' if i == 0 else 'Sidearm'} ({m['name']})")
+    hit_txt = "auto-hit" if m["hit_target"] is None else f"{m['hit_target']}+"
     st.caption(
-        f"{lead}: Attack pool **{m['pool']}** dice - Hit **{m['hit_target']}+** - "
+        f"{lead}: Attack pool **{m['pool']}** dice - Hit **{hit_txt}** - "
         f"Armour **{tn(m['armour_target'])}** - Evade **{'off' if m['evade_target'] is None else tn(m['evade_target'])}** - "
         f"Surge **{m['surge_die']}** - Damage per die **{m['per_die_damage']}**"
         + (f" - Keywords: {', '.join(kw)}" if kw else ""))
@@ -434,4 +629,11 @@ with st.expander("What is applied (unit options, cards and notes)"):
             st.markdown(f"- **{c}** ({side} card): {CARDS[side][c].get('note', 'no note')}")
 with st.expander("Active modifiers"):
     st.json({"attacker": {e["weapon"].name: m.__dict__ for e, m in zip(entries, attack_mods)},
-             "defender": def_mods.__dict__})
+             "defender (per attack)": {target_labels[t]: m.__dict__ for t, m in def_by_target.items()},
+             "defender (attack-wide: casualties)": def_mods.__dict__})
+
+# ------------------------------- Changelog --------------------------------- #
+st.divider()
+with st.expander("Change log", expanded=False):   # collapsed by default; edit CHANGELOG.md to add entries
+    _log = HERE / "CHANGELOG.md"
+    st.markdown(_log.read_text(encoding="utf-8") if _log.exists() else "No change log yet.")
