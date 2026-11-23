@@ -105,8 +105,7 @@
       "phase": "any",
       "effects": {
         "precision": 1
-      },
-      "note": "Friendly weapons within 4 inches. Wording unclear in source."
+      }
     },
     "Zerg: Scourge Queen (Precision 4)": {
       "faction": "Zerg",
@@ -115,6 +114,37 @@
         "precision": 4
       },
       "note": "Close Combat weapons while outnumbering engaged enemy models (also gains Instant)."
+    },
+    "Zerg: Zagara - Critical Hit (1) for Size 2 units": {
+      "faction": "Zerg",
+      "scope": "all",
+      "phase": "any",
+      "effects": {
+        "critical": 1
+      },
+      "when": {
+        "own_size": 2
+      }
+    },
+    "Zerg: Malignant Creep - Impact +1 to Hit": {
+      "faction": "Zerg",
+      "phase": "melee",
+      "targets": [
+        "impact"
+      ],
+      "effects": {
+        "hit_mod": 1
+      }
+    },
+    "Zerg: Evolution Chamber - Impact +1 to Hit": {
+      "faction": "Zerg",
+      "phase": "melee",
+      "targets": [
+        "impact"
+      ],
+      "effects": {
+        "hit_mod": 1
+      }
     },
     "Protoss: Nerazim - Might of the Nerazim (Critical Hit 2)": {
       "faction": "Protoss",
@@ -152,40 +182,6 @@
       "effects": {
         "reroll_hits": "misses"
       }
-    },
-    "Zerg: Zagara - Critical Hit (1) for Size 2 units": {
-      "faction": "Zerg",
-      "scope": "all",
-      "phase": "any",
-      "effects": {
-        "critical": 1
-      },
-      "when": {
-        "own_size": 2
-      },
-      "note": "Zagara buff: a friendly Size 2 unit gains Critical Hit. Critical Hit (1) is assumed; edit the value in cards.json if your card says otherwise."
-    },
-    "Zerg: Malignant Creep - Impact +1 to Hit": {
-      "faction": "Zerg",
-      "phase": "melee",
-      "targets": [
-        "impact"
-      ],
-      "effects": {
-        "hit_mod": 1
-      },
-      "note": "Impact rolls hit 1 easier. Check the exact wording and conditions on the card."
-    },
-    "Zerg: Evolution Chamber - Impact +1 to Hit": {
-      "faction": "Zerg",
-      "phase": "melee",
-      "targets": [
-        "impact"
-      ],
-      "effects": {
-        "hit_mod": 1
-      },
-      "note": "Impact rolls hit 1 easier. Check the exact wording and conditions on the card."
     }
   },
   "defender": {
@@ -278,6 +274,7 @@
     },
     "Terran: Raven Anti-Armour Missile (Armour -1 debuff)": {
       "faction": "Terran",
+      "scope": "All",
       "phase": "any",
       "effects": {
         "armour_mod": -1
@@ -290,8 +287,7 @@
       "phase": "any",
       "effects": {
         "armour_mod": -1
-      },
-      "note": "Wording partly garbled in source."
+      }
     },
     "Zerg: Reactive Tissue (Dodge 1, on Creep)": {
       "faction": "Zerg",
