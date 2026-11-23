@@ -476,8 +476,8 @@ with left:
             atk_used.remove(c)
             atk_skipped.append(c)
     atk_assign = card_assignment("attacker", atk_used, entry_ids, target_labels, "a_cardto")
-    custom_first = custom_attack_box("Custom Attack Modifiers - First Gun", "ca",
-                                     "Applies to the main weapon (the first gun) only.")
+    custom_first = custom_attack_box("Custom Attack Modifiers - Main Weapon", "ca",
+                                     "Applies to the main weapon only.")
     # One box per Sidearm that is actually being fired, so units with several Sidearms are covered.
     custom_sides = {}
     for i, e in enumerate(entries[1:], start=1):
