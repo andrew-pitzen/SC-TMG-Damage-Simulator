@@ -25,7 +25,7 @@ CUSTOM = "Custom (manual)"
 # Unit preselected when a faction is chosen. Edit these to change the defaults.
 # A faction (or unit name) that is missing, misspelled or not valid for that side falls back to the first unit.
 DEFAULTS = {
-    "attacker": {"Terran": "Marine", "Protoss": "Zealot", "Zerg": "Zergling"},
+    "attacker": {"Terran": "Marine", "Protoss": "Adept", "Zerg": "Zergling"},
     "defender": {"Terran": "Marine", "Protoss": "Zealot", "Zerg": "Zergling"},
 }
 
