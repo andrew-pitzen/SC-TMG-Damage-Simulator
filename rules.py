@@ -25,6 +25,9 @@ units.json conventions
   unit["auto_hits"]: [{"label": "Shadow Strike", "phase": "melee", "dice": 4, "dmg": 1, "verify": "..."}]
                      abilities whose dice hit automatically (no Hit roll); each is its own extra attack with
                      its own defender box. A single object instead of a list also works.
+  unit["direct_damage"]: [{"label": "Ability name", "phase": "any", "dmg": 2, "note": "..."}]
+                     abilities that deal damage directly (no dice: no Hit, Armour or Evade, and not reduced
+                     by Total damage reduction). One object instead of a list also works.
   unit["impact"]   : {"dice": 1, "hit": 4, "dmg": 1, "per_model": true, "verify": "..."}  Impact rolls for
                      a close combat attack: a separate extra attack, no attacker keywords/cards, only
                      defender effects with scope "all".
@@ -61,6 +64,14 @@ def auto_hit_list(unit: dict) -> list:
     if not ah:
         return []
     return list(ah) if isinstance(ah, list) else [ah]
+
+
+def direct_damage_list(unit: dict) -> list:
+    """The unit's automatic damage abilities as a list (one object or a list in units.json)."""
+    dd = unit.get("direct_damage")
+    if not dd:
+        return []
+    return list(dd) if isinstance(dd, list) else [dd]
 
 
 def is_impact_option(opt: dict) -> bool:

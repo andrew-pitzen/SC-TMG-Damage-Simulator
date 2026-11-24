@@ -1,3 +1,9 @@
+### 2026-11-23
+- Fixed some scope all modifiers being broken due to capitalization
+- Updated Firebat to match the fully revealed card
+- Added Wave 4 units: Tal'Darim Pylon, Alarak, Slayer (Stalker), Reaver, Scarab, Phasing Scarab, Solarite Scarab, Infested Trooper (Infested Marine), Infested Marine, Infested Missile Launcher, and Stukov.
+- Added support for abilities like Stukov's Bio-Kill Switch to deal direct damage
+
 ### 2026-11-22
 - Added a Changelog
 - Fixed Attacker/Defender cards applying to all sidearm weapons. 

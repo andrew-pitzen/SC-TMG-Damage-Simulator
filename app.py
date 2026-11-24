@@ -359,6 +359,8 @@ with left:
     a_all_opts = []          # ticked unit options that apply to every weapon (scope "all")
     impact_weapon = None     # Impact rolls, resolved as a separate extra attack
     auto_weapons = []        # [(target id, Weapon)] auto-hit abilities (e.g. Zeratul), each a separate extra attack
+    direct_abilities = []    # [(label, damage)] automatic damage abilities (no dice at all)
+    direct_only = False      # only the automatic damage, no weapon attack
 
     if a_faction == CUSTOM:
         a_phase = "ranged"
@@ -443,6 +445,17 @@ with left:
                 aw = auto_hit_inputs(ah, a_unit)
                 if aw is not None and aw.roa > 0:
                     auto_weapons.append((f"auto:{aw.name}", aw))
+        for dd in rules.direct_damage_list(udata):
+            if rules.phase_ok(dd, a_phase):
+                dlabel = dd.get("label", "Direct damage")
+                if st.checkbox(f"{dlabel} (direct damage: no dice, no Armour or Evade)", key=f"a_dd_{a_unit}_{dlabel}",
+                               help=dd.get("note", "Damage dealt straight to the unit. Defender dice, Total damage reduction "
+                                                   "and Concentrated Fire do not apply.")):
+                    with st.container(border=True):
+                        if dd.get("verify"):
+                            st.caption(f"Check the numbers: {dd['verify']}")
+                        dval = st.number_input("Direct damage", 0, 100, int(dd.get("dmg", 1)), key=f"a_dd_{a_unit}_{dlabel}_dmg")
+                    direct_abilities.append((dlabel, int(dval)))
     elif a_phase == "melee":
         if st.checkbox("Impact rolls (separate extra attack; ignores attacker keywords)", key="a_imp_custom"):
             c1, c2, c3 = st.columns(3)
@@ -451,6 +464,16 @@ with left:
                 i_hit = target_input("Impact Hit", "a_imp_ch", 4)
             i_dmg = c3.number_input("Impact DMG", 0, 20, 1, key="a_imp_cdm")
             impact_weapon = Weapon(1, int(i_dice), i_hit, int(i_dmg), name="Impact")
+
+    if a_faction == CUSTOM:
+        cdd = st.number_input("Direct damage (automatic, no dice)", 0, 100, 0, key="a_dd_custom",
+                              help="Damage dealt straight to the unit by an ability: no Hit, Armour or Evade roll, "
+                                   "not reduced by Total damage reduction.")
+        if cdd:
+            direct_abilities.append(("Direct damage", int(cdd)))
+    if direct_abilities:
+        direct_only = st.checkbox("Only the direct damage (no weapon attack)", key=f"a_ddonly_{a_unit}",
+                                  help="Tick when the ability is used on its own, without firing the weapon above.")
 
     # The attacks in this pool: the main weapon, each ticked Sidearm, and Impact rolls (defender cards only).
     entry_ids = ["main"] + [f"sa:{e['weapon'].name}" for e in entries[1:]]
@@ -554,7 +577,11 @@ for tid, aw in auto_weapons:
     auto_idx.add(len(attacks))
     attacks.append((aw, AttackMods(), def_by_target[tid]))
 
-res = simulate_attacks(attacks, defender, def_mods, n=N_SIMS, seed=seed)
+direct_total = sum(v for _, v in direct_abilities)
+if direct_only:   # ability on its own: roll no dice at all
+    attacks = [(Weapon(1, 0, 2, 0, name="(no weapon attack)"), None)]
+    impact_idx, auto_idx = None, set()
+res = simulate_attacks(attacks, defender, def_mods, n=N_SIMS, seed=seed, direct_damage=direct_total)
 meta = res["meta"]
 
 if atk_skipped or def_skipped or d_opts_skipped:
@@ -585,6 +612,9 @@ for i, m in enumerate(meta["weapons"]):
         f"Armour **{tn(m['armour_target'])}** - Evade **{'off' if m['evade_target'] is None else tn(m['evade_target'])}** - "
         f"Surge **{m['surge_die']}** - Damage per die **{m['per_die_damage']}**"
         + (f" - Keywords: {', '.join(kw)}" if kw else ""))
+if direct_total:
+    st.caption("Direct damage (no dice, ignores Armour, Evade and Total damage reduction): "
+               + ", ".join(f"{n} **{v}**" for n, v in direct_abilities) + f" = **{direct_total}**")
 st.caption(f"First model HP incl. Shield **{meta['first_model_hp']}**"
            + (" - weapons resolve in order (main first); Concentrated Fire only limits its own weapon"
               if len(meta["weapons"]) > 1 else ""))

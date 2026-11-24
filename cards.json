@@ -59,7 +59,7 @@
     },
     "Zerg: Vile Debilitating Saliva (Hit -1 debuff on attacker)": {
       "faction": "Zerg",
-      "scope": "All",
+      "scope": "all",
       "phase": "ranged",
       "effects": {
         "hit_mod": -1
@@ -249,7 +249,7 @@
     },
     "Protoss: Sentry Guardian Shield (-1 attack die)": {
       "faction": "Protoss",
-      "scope": "All",
+      "scope": "all",
       "phase": "ranged",
       "effects": {
         "attack_pool_reduction": 1
@@ -274,7 +274,7 @@
     },
     "Terran: Raven Anti-Armour Missile (Armour -1 debuff)": {
       "faction": "Terran",
-      "scope": "All",
+      "scope": "all",
       "phase": "any",
       "effects": {
         "armour_mod": -1

@@ -312,8 +312,13 @@ _STAGE_KEYS = ("attack_pool", "hits", "surged", "armour_pool", "armour_saved", "
 
 
 def simulate_attacks(attacks: List[tuple], defender: Defender, dfn: DefendMods | None = None,
-                     n: int = N_DEFAULT, seed: int | None = None) -> Dict[str, np.ndarray]:
+                     n: int = N_DEFAULT, seed: int | None = None,
+                     direct_damage: int = 0) -> Dict[str, np.ndarray]:
     """Several weapons fired in ONE attack (a main weapon plus Sidearm weapons).
+
+    `direct_damage` is automatic damage from abilities ("deal 2 damage to an enemy unit"): no dice
+    are rolled, so no Hit, Armour or Evade, and Total damage reduction and Concentrated Fire do not
+    touch it. It is added to the unit's damage before the weapons' damage and counts towards casualties.
 
     `attacks` is a list of (Weapon, AttackMods | None[, DefendMods | None]). Each weapon rolls its own pool through
     Hit, Surge, Armour and Evade. Their damage is then added together and casualties are worked
@@ -351,9 +356,10 @@ def simulate_attacks(attacks: List[tuple], defender: Defender, dfn: DefendMods |
     # once for the whole attack (used up by the first weapons' damage). CONCENTRATED FIRE (X) only
     # limits the weapon that has it: that weapon can destroy at most X models, and its excess damage
     # (including partial damage on the next model) is ignored. Other weapons are not limited.
-    cum = np.full(n, defender.existing_damage, dtype=np.int64)
+    direct = max(0, int(direct_damage))
+    cum = np.full(n, defender.existing_damage + direct, dtype=np.int64)
     reduction = np.full(n, dfn.total_reduction, dtype=np.int64)
-    landed = np.zeros(n, dtype=np.int64)
+    landed = np.full(n, direct, dtype=np.int64)
     for p in parts:
         dmg = p["raw_damage"]
         cut = np.minimum(dmg, reduction)
@@ -371,7 +377,7 @@ def simulate_attacks(attacks: List[tuple], defender: Defender, dfn: DefendMods |
     new_damage = landed
 
     meta = dict(parts[0]["meta"])
-    meta.update({"first_model_hp": first_hp, "weapons": [p["meta"] for p in parts]})
+    meta.update({"first_model_hp": first_hp, "weapons": [p["meta"] for p in parts], "direct_damage": direct})
     return {**stages, "damage": new_damage, "kills": kills, "leftover": leftover, "meta": meta}
 
 

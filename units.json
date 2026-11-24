@@ -48,7 +48,7 @@
         }
       ]
     },
-    "Firebat":{
+    "Firebat": {
       "tags": [
         "Armoured",
         "Biological",
@@ -88,17 +88,18 @@
           "roa": 2,
           "hit": 3,
           "dmg": 1,
-          "note": "Card obscured in promo picture, can't see surge."
+          "surge": "D3",
+          "surge_tags": [
+            "Light"
+          ]
         }
       ],
       "options": [
         {
           "name": "Fire it up",
+          "effects": {},
           "kind": "passive",
           "side": "attack",
-          "effects": {
-
-          },
           "phase": "ranged",
           "weapons": [
             "Perdition Flamethrower"
@@ -108,6 +109,22 @@
           ],
           "situational": true,
           "note": "You may choose up to 1 (or 2 if your unit is supply 2) models to use the Flamer Template rather than rolling its regular RoA."
+        },
+        {
+          "name": "Need a light? (Upgrade)",
+          "effects": {},
+          "kind": "passive",
+          "side": "attack",
+          "phase": "melee",
+          "weapons": [
+            "Flame Strike"
+          ],
+          "keywords": [
+            "flamer template"
+          ],
+          "situational": true,
+          "upgrade": true,
+          "note": "You may choose up to 1 model to use the Flamer Template rather than rolling its regular RoA."
         },
         {
           "name": "Stimpack",
@@ -1156,6 +1173,75 @@
         }
       ]
     },
+    "Alarak": {
+      "impact": {
+        "dice": 6,
+        "hit": 4,
+        "dmg": 1,
+        "per_model": true
+      },
+      "auto_hits": {
+        "label": "Destruction Wave",
+        "phase": "melee",
+        "dice": 4,
+        "dmg": 1,
+        "note": "Change the Hits to 6 if Empowered."
+      },
+      "tags": [
+        "Biological",
+        "Psionic",
+        "Ground"
+      ],
+      "armour": 4,
+      "evade": 5,
+      "hp": 6,
+      "shield": 3,
+      "models_default": 1,
+      "models_max": 1,
+      "size": 2,
+      "weapons": [
+        {
+          "name": "Bane Blades",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 6,
+          "hit": 2,
+          "dmg": 1,
+          "surge": "D3",
+          "surge_plus": 1,
+          "surge_tags": [
+            "Light",
+            "Armoured"
+          ]
+        }
+      ],
+      "options": [
+        {
+          "name": "Highlord of the Tal'Darim (Impact)",
+          "kind": "passive",
+          "side": "attack",
+          "effects": {},
+          "impact_dice": 3,
+          "phase": "melee",
+          "situational": true
+        },
+        {
+          "name": "Empower Me",
+          "kind": "ability",
+          "side": "attack",
+          "effects": {
+            "bonus_dice_per_model": 4
+          },
+          "phase": "melee",
+          "weapons": [
+            "Rank Blades"
+          ],
+          "situational": true,
+          "note": "Change the Bonus dice box to 2 if Empowered. Target another friendly Biological unit within 8\": it suffers 2 Damage and Rank Blades get BUFF RoA (4) (6 when Empowered)."
+        }
+      ]
+    },
     "Artanis": {
       "impact": {
         "dice": 6,
@@ -1507,6 +1593,162 @@
       "size": 3,
       "weapons": []
     },
+    "Reaver": {
+      "tags": [
+        "Armoured",
+        "Mechanical",
+        "Ground"
+      ],
+      "armour": 5,
+      "evade": null,
+      "hp": 8,
+      "shield": 6,
+      "models_default": 1,
+      "models_max": 1,
+      "size": 4,
+      "weapons": [
+        {
+          "name": "Crawl Over",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 2,
+          "hit": 2,
+          "dmg": 1
+        }
+      ]
+    },
+    "Scarab": {
+      "tags": [
+        "Psionic",
+        "Ground"
+      ],
+      "armour": 6,
+      "evade": 3,
+      "hp": 2,
+      "shield": 1,
+      "models_default": 1,
+      "models_max": 1,
+      "size": 1,
+      "weapons": [
+        {
+          "name": "Scarab Detonation",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 12,
+          "hit": 2,
+          "dmg": 1,
+          "critical": 2,
+          "keywords": [
+            "Critical Hit (2)"
+          ]
+        }
+      ],
+      "options": [
+        {
+          "name": "Nimble",
+          "scope": "all",
+          "kind": "passive",
+          "side": "defend",
+          "effects": {
+            "grant_evade_roll": true
+          },
+          "phase": "any",
+          "note": "Always eligible to use Evade Rolls against Attacks or Special Abilities."
+        }
+      ]
+    },
+    "Phasing Scarab": {
+      "tags": [
+        "Psionic",
+        "Ground"
+      ],
+      "armour": 6,
+      "evade": 3,
+      "hp": 2,
+      "shield": 1,
+      "models_default": 1,
+      "models_max": 1,
+      "size": 1,
+      "weapons": [
+        {
+          "name": "Phase Blast",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 6,
+          "hit": 2,
+          "dmg": 1,
+          "surge": "D3",
+          "surge_tags": [
+            "Armoured"
+          ],
+          "pierce_x": 2,
+          "pierce_tag": "Armoured",
+          "critical": 2,
+          "keywords": [
+            "Critical Hit (2)",
+            "Pierce Armoured (2)"
+          ]
+        }
+      ],
+      "options": [
+        {
+          "name": "Nimble",
+          "scope": "all",
+          "kind": "passive",
+          "side": "defend",
+          "effects": {
+            "grant_evade_roll": true
+          },
+          "phase": "any",
+          "note": "Always eligible to use Evade Rolls against Attacks or Special Abilities."
+        }
+      ]
+    },
+    "Solarite Scarab": {
+      "tags": [
+        "Psionic",
+        "Ground"
+      ],
+      "armour": 6,
+      "evade": 3,
+      "hp": 2,
+      "shield": 1,
+      "models_default": 1,
+      "models_max": 1,
+      "size": 1,
+      "weapons": [
+        {
+          "name": "Solarite Blast",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 5,
+          "hit": 2,
+          "dmg": 2,
+          "critical": 2,
+          "keywords": [
+            "Critical Hit (2)",
+            "Instant"
+          ]
+        }
+      ],
+      "options": [
+        {
+          "name": "Nimble",
+          "scope": "all",
+          "kind": "passive",
+          "side": "defend",
+          "effects": {
+            "grant_evade_roll": true
+          },
+          "phase": "any",
+          "note": "Always eligible to use Evade Rolls against Attacks or Special Abilities."
+        }
+      ]
+    },
     "Sentry": {
       "tags": [
         "Light",
@@ -1545,6 +1787,57 @@
         }
       ]
     },
+    "Slayer (Stalker)": {
+      "tags": [
+        "Armoured",
+        "Mechanical",
+        "Ground"
+      ],
+      "armour": 4,
+      "evade": 6,
+      "hp": 6,
+      "shield": 3,
+      "models_default": 2,
+      "models_max": 2,
+      "size": 3,
+      "weapons": [
+        {
+          "name": "Particle Disruptors",
+          "phase": "ranged",
+          "rng": 12,
+          "target": "All",
+          "roa": 4,
+          "hit": 3,
+          "dmg": 2,
+          "surge": "D3",
+          "surge_tags": [
+            "Armoured"
+          ]
+        },
+        {
+          "name": "Stomp",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 2,
+          "hit": 5,
+          "dmg": 1
+        }
+      ],
+      "options": [
+        {
+          "name": "Bloodguard Blink",
+          "kind": "passive",
+          "side": "attack",
+          "effects": {
+            "bonus_dice_per_model": 1
+          },
+          "phase": "any",
+          "situational": true,
+          "note": "After a PLACE effect targeting an enemy unit, this Unit's weapons gain BUFF RoA (1) against that unit."
+        }
+      ]
+    },
     "Stalker": {
       "tags": [
         "Armoured",
@@ -1570,6 +1863,36 @@
           "surge": "D3",
           "surge_tags": [
             "Armoured"
+          ]
+        }
+      ]
+    },
+    "Tal'Darim Pylon": {
+      "tags": [
+        "Armoured",
+        "Ground"
+      ],
+      "armour": 5,
+      "evade": null,
+      "hp": 6,
+      "shield": 2,
+      "models_default": 1,
+      "models_max": 1,
+      "size": 3,
+      "weapons": [
+        {
+          "name": "Overcharged Pylon",
+          "phase": "ranged",
+          "rng": 8,
+          "target": "All",
+          "roa": 3,
+          "hit": 3,
+          "dmg": 1,
+          "pierce_x": 2,
+          "pierce_tag": "Armoured",
+          "keywords": [
+            "Pierce Armoured (2)",
+            "Pinpoint"
           ]
         }
       ]
@@ -1982,6 +2305,210 @@
         }
       ]
     },
+    "Infested Marine": {
+      "impact": {
+        "dice": 2,
+        "hit": 4,
+        "dmg": 1,
+        "per_model": true
+      },
+      "tags": [
+        "Biological",
+        "Infested",
+        "Light",
+        "Ground"
+      ],
+      "armour": 4,
+      "evade": 6,
+      "hp": 2,
+      "shield": 0,
+      "models_default": 3,
+      "models_max": 6,
+      "size": 2,
+      "weapons": [
+        {
+          "name": "Infested C-14 Rifle",
+          "phase": "ranged",
+          "rng": 12,
+          "target": "All",
+          "roa": 2,
+          "hit": 4,
+          "dmg": 1,
+          "surge": "D3",
+          "surge_tags": [
+            "Light"
+          ],
+          "keywords": [
+            "Burst Fire 6\" (2)"
+          ]
+        },
+        {
+          "name": "Infested Missile Launcher - Acid Blast (upgrade, 1 model)",
+          "phase": "ranged",
+          "rng": 6,
+          "target": "All",
+          "roa": 3,
+          "hit": 3,
+          "dmg": 1,
+          "pierce_x": 2,
+          "pierce_tag": "Armoured",
+          "critical": 1,
+          "keywords": [
+            "Critical Hit (1)",
+            "Long Range 12\"",
+            "Pierce Armoured (2)",
+            "Specialist"
+          ],
+          "upgrade": true
+        },
+        {
+          "name": "Infested Missile Launcher - Scourge Shot (upgrade, 1 model)",
+          "phase": "ranged",
+          "rng": 12,
+          "target": "All",
+          "roa": 3,
+          "hit": 3,
+          "dmg": 1,
+          "keywords": [
+            "Burst Fire 6\" (2)",
+            "Specialist"
+          ],
+          "upgrade": true
+        },
+        {
+          "name": "Strike",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 1,
+          "hit": 4,
+          "dmg": 1
+        },
+        {
+          "name": "Wild Mutation",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 2,
+          "hit": 3,
+          "dmg": 1,
+          "surge": "D3",
+          "surge_plus": 1,
+          "surge_tags": [
+            "Armoured"
+          ]
+        }
+      ],
+      "options": [
+        {
+          "name": "Live for the Swarm",
+          "kind": "passive",
+          "side": "attack",
+          "effects": {
+            "precision": 2
+          },
+          "phase": "any",
+          "situational": true,
+          "note": "Infested C-14 Rifle and Close Combat attacks gain Precision (2) when attacking an Infested unit or a unit within 6\" of a Source of Creep / Creep Tumor."
+        }
+      ]
+    },
+    "Infested Missile Turret": {
+      "tags": [
+        "Armoured",
+        "Biological",
+        "Infested",
+        "Ground"
+      ],
+      "armour": 5,
+      "evade": null,
+      "hp": 8,
+      "shield": 0,
+      "models_default": 1,
+      "models_max": 1,
+      "size": 3,
+      "weapons": [
+        {
+          "name": "Firefly Missiles",
+          "phase": "ranged",
+          "rng": 14,
+          "target": "Flying",
+          "roa": 8,
+          "hit": 4,
+          "dmg": 1,
+          "surge": "D3",
+          "surge_tags": [
+            "Light",
+            "Armoured"
+          ],
+          "anti_evade": 1,
+          "keywords": [
+            "Anti-Evade (1)"
+          ]
+        }
+      ]
+    },
+    "Infested Trooper (Infested Marine)": {
+      "impact": {
+        "dice": 2,
+        "hit": 4,
+        "dmg": 1,
+        "per_model": true
+      },
+      "tags": [
+        "Biological",
+        "Infested",
+        "Light",
+        "Ground"
+      ],
+      "armour": 4,
+      "evade": 6,
+      "hp": 4,
+      "shield": 0,
+      "models_default": 3,
+      "models_max": 3,
+      "size": 2,
+      "weapons": [
+        {
+          "name": "Infested C-14 Rifle",
+          "phase": "ranged",
+          "rng": 12,
+          "target": "All",
+          "roa": 3,
+          "hit": 3,
+          "dmg": 1,
+          "surge": "D3",
+          "surge_tags": [
+            "Light"
+          ],
+          "keywords": [
+            "Burst Fire 6\" (2)"
+          ]
+        },
+        {
+          "name": "Bayonet",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 2,
+          "hit": 5,
+          "dmg": 1
+        }
+      ],
+      "options": [
+        {
+          "name": "Live for the Swarm",
+          "kind": "passive",
+          "side": "attack",
+          "effects": {
+            "precision": 2
+          },
+          "phase": "any",
+          "situational": true,
+          "note": "Infested C-14 Rifle and Close Combat attacks gain Precision (2) when attacking an Infested unit or a unit within 6\" of a Source of Creep / Creep Tumor."
+        }
+      ]
+    },
     "Kerrigan": {
       "impact": {
         "dice": 4,
@@ -2348,6 +2875,63 @@
           "roa": 2,
           "hit": 4,
           "dmg": 1
+        }
+      ]
+    },
+    "Stukov": {
+      "impact": {
+        "dice": 6,
+        "hit": 4,
+        "dmg": 1,
+        "per_model": true
+      },
+      "direct_damage": [
+        {
+          "label": "Bio-Kill Switch",
+          "phase": "any",
+          "dmg": 2,
+          "note": "Deals 2 damage directly to all infested enemy units: no dice are rolled."
+        }
+      ],
+      "tags": [
+        "Biological",
+        "Infested",
+        "Ground"
+      ],
+      "armour": 4,
+      "evade": 6,
+      "hp": 10,
+      "shield": 0,
+      "models_default": 1,
+      "models_max": 1,
+      "size": 2,
+      "weapons": [
+        {
+          "name": "Corrosive Blast",
+          "phase": "ranged",
+          "rng": 8,
+          "target": "Ground",
+          "roa": 3,
+          "hit": 3,
+          "dmg": 1,
+          "surge": "D3",
+          "surge_tags": [
+            "Light",
+            "Armoured"
+          ]
+        },
+        {
+          "name": "Infested Arm",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 3,
+          "hit": 3,
+          "dmg": 2,
+          "surge": "D3",
+          "surge_tags": [
+            "Armoured"
+          ]
         }
       ]
     },
