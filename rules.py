@@ -25,6 +25,12 @@ units.json conventions
   unit["auto_hits"]: [{"label": "Shadow Strike", "phase": "melee", "dice": 4, "dmg": 1, "verify": "..."}]
                      abilities whose dice hit automatically (no Hit roll); each is its own extra attack with
                      its own defender box. A single object instead of a list also works.
+  unit["ability_attacks"]: [{"label": "Ability name", "phase": "any", "dice": 3, "hit": 4, "dmg": 1,
+                     "per_model": false, "surge": "D3", "surge_tags": ["Light"], "note": "..."}]
+                     abilities that roll to hit like a weapon (own dice / Hit / DMG; optional surge, pierce,
+                     precision, critical, anti_evade). Each is its own extra attack that COUNTS AS A GUN: attacker
+                     cards, [all weapons] effects, its own custom box and defender cards apply to it, and it is
+                     NOT hidden by "Not shooting". One object instead of a list also works.
   unit["direct_damage"]: [{"label": "Ability name", "phase": "any", "dmg": 2, "note": "..."}]
                      abilities that deal damage directly (no dice: no Hit, Armour or Evade, and not reduced
                      by Total damage reduction). One object instead of a list also works.
@@ -67,6 +73,14 @@ def auto_hit_list(unit: dict) -> list:
     if not ah:
         return []
     return list(ah) if isinstance(ah, list) else [ah]
+
+
+def ability_attack_list(unit: dict) -> list:
+    """The unit's roll-to-hit ability attacks as a list (one object or a list in units.json)."""
+    ab = unit.get("ability_attacks")
+    if not ab:
+        return []
+    return list(ab) if isinstance(ab, list) else [ab]
 
 
 def direct_damage_list(unit: dict) -> list:
@@ -211,7 +225,8 @@ def unit_size(unit: dict, state: dict) -> int:
 
 
 def phase_ok(opt: dict, attack_phase: str) -> bool:
-    return opt.get("phase", "any") in ("any", attack_phase)
+    # attack_phase "any" = "Not shooting" mode: no weapon is selected, so abilities of every phase are offered
+    return attack_phase == "any" or opt.get("phase", "any") in ("any", attack_phase)
 
 
 def matches_weapon(opt: dict, weapon: dict | None) -> bool:

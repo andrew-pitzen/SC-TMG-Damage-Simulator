@@ -787,6 +787,24 @@
         "dice": 4,
         "dmg": 2
       },
+      "ability_attacks": [
+        {
+          "label": "Auto Turret - Gauss Cannon",
+          "phase": "ranged",
+          "rng": 8,
+          "target": "All",
+          "dice": 6,
+          "hit": 3,
+          "dmg": 1,
+          "keywords": [
+            "Pinpoint"
+          ],
+          "surge": "D3",
+          "surge_tags": [
+            "Light"
+          ]
+        }
+      ],
       "tags": [
         "Light",
         "Mechanical",
@@ -2756,6 +2774,12 @@
       ]
     },
     "Ravager": {
+      "auto_hits": {
+        "label": "Bile",
+        "phase": "any",
+        "dice": 5,
+        "dmg": 1
+      },
       "impact": {
         "dice": 2,
         "hit": 4,
