@@ -4,6 +4,7 @@
 - Fixed Ravager's Potent Bile to only affect bile itself, melee weapons, and abilities used in the combat phase
 - Fixed Marine's Combat Shields to grant evades against Impact and abilities
 - Renamed Attacker/Defender cards to Attacker/Defender Buffs
+- Fixed Impact cards not applying to impact
 
 ### 2026-11-23
 - Fixed some scope all modifiers being broken due to capitalization
