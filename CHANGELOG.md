@@ -1,3 +1,10 @@
+### 2026-11-24
+- Removed the "No shooting" and "include close combat weapons" buttons
+- Moved all weapons to checkboxes similar to abilities instead of a dropdown, allowing for multiple weapons to be calculated together
+- Fixed Ravager's Potent Bile to only affect bile itself, melee weapons, and abilities used in the combat phase
+- Fixed Marine's Combat Shields to grant evades against Impact and abilities
+- Renamed Attacker/Defender cards to Attacker/Defender Buffs
+
 ### 2026-11-23
 - Fixed some scope all modifiers being broken due to capitalization
 - Updated Firebat to match the fully revealed card

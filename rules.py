@@ -29,8 +29,8 @@ units.json conventions
                      "per_model": false, "surge": "D3", "surge_tags": ["Light"], "note": "..."}]
                      abilities that roll to hit like a weapon (own dice / Hit / DMG; optional surge, pierce,
                      precision, critical, anti_evade). Each is its own extra attack that COUNTS AS A GUN: attacker
-                     cards, [all weapons] effects, its own custom box and defender cards apply to it, and it is
-                     NOT hidden by "Not shooting". One object instead of a list also works.
+                     cards, [all weapons] effects, its own custom box and defender cards apply to it. One object
+                     instead of a list also works.
   unit["direct_damage"]: [{"label": "Ability name", "phase": "any", "dmg": 2, "note": "..."}]
                      abilities that deal damage directly (no dice: no Hit, Armour or Evade, and not reduced
                      by Total damage reduction). One object instead of a list also works.
@@ -40,6 +40,12 @@ units.json conventions
   cards.json cards may set "affects": "opponent" -> a debuff on the enemy: an attacker card then holds
                      DEFENDER effects (e.g. armour_mod -1) and a defender card holds ATTACKER effects
                      (e.g. hit_mod -1); scope and "applies to" work as usual.
+  "also_reaches": ["impact", "auto", "ability", "weapon"]  on a defender card/option with a phase: also reach
+                     attacks of those kinds whatever their phase (Marine's Combat Shield: melee attacks plus Impact
+                     and auto-hit abilities, but not ranged weapons or ability attacks that count as guns).
+  cards.json "phase" ("ranged" | "melee" | "any", default any) on a card or option: it only affects attacks of
+                     that phase (weapons, ability attacks, auto-hits; Impact counts as ranged, see IMPACT_PHASE). Tick weapons of
+                     both phases and each attack gets only the cards that match it.
   cards.json attacker cards may set "targets": ["impact"] -> the card affects ONLY Impact rolls (no weapon
                      picker; ignored while Impact is off).
   effects may contain "dmg_set_target_size": true  -> damage equals the target's Size (min 1)
@@ -49,6 +55,9 @@ from __future__ import annotations
 import re
 
 from engine import DefendMods, combine, norm_tag
+
+# Phase of Impact rolls: cards and abilities tagged with this phase affect Impact.
+IMPACT_PHASE = "ranged"
 
 KIND_LABEL = {"passive": "Passive", "upgrade": "Upgrade", "ability": "Ability"}
 
@@ -110,7 +119,62 @@ def card_targets(card: dict) -> list:
 def card_label(name: str, card: dict) -> str:
     if "impact" in card_targets(card):
         return f"{name}  [Impact only]"
-    return f"{name}  [all weapons]" if is_all_scope(card) else name
+    tags = (["[all weapons]"] if is_all_scope(card) else []) + (
+        [f"[{card['phase']} only]"] if card.get("phase", "any") in ("ranged", "melee") else [])
+    return "  ".join([name] + tags)
+
+
+def phase_offered(item: dict, ticked_phases) -> bool:
+    """Is an option shown? Abilities, upgrades, ability attacks, auto-hits, direct damage and Impact are
+    always shown. Only passives are limited to the phases of the ticked weapons (all when none is ticked)."""
+    if item.get("kind", "ability") != "passive":
+        return True
+    ph = item.get("phase", "any")
+    return not ticked_phases or ph == "any" or ph in ticked_phases
+
+
+def target_kind(tid: str) -> str:
+    """Kind of an attack id: weapon ("w:..."), ability (ability attack "ab:..."), auto (auto-hit "auto:...")
+    or impact."""
+    return {"w": "weapon", "ab": "ability"}.get(tid.split(":")[0], tid.split(":")[0])
+
+
+def reaches_attack(item: dict, tid: str, target_phase: dict) -> bool:
+    """Does a card / option reach this attack? Its phase must fit, OR the attack's kind must be listed in the
+    item's "also_reaches" (e.g. ["impact", "auto"]: Impact and auto-hit abilities whatever their phase)."""
+    return phase_ok(item, target_phase.get(tid, "any")) or target_kind(tid) in item.get("also_reaches", [])
+
+
+def reaches_any(item: dict, target_phase: dict) -> bool:
+    return any(reaches_attack(item, t, target_phase) for t in target_phase)
+
+
+def default_target(item: dict, target_ids, target_phase: dict):
+    """The attack a 'first'-scope item defaults to: the first one whose phase fits it (else the first
+    attack). None when there are no attacks."""
+    for t in target_ids:
+        if phase_ok(item, target_phase.get(t, "any")):
+            return t
+    return target_ids[0] if target_ids else None
+
+
+def phase_filtered_items(items, target_ids, target_phase: dict) -> list:
+    """Apply card / option phases per attack before defend_mods_by_target.
+
+    items: [(scope, effects, assigned ids, item dict)] -> [(scope, effects, assigned ids)]. An item whose
+    phase is ranged/melee only reaches attacks of that phase (plus the kinds in its "also_reaches"); scope "all" becomes "the matching attacks".
+    An item that reaches no attack is dropped (so its Total reduction / HP / Shield bonus don't apply
+    either)."""
+    out = []
+    for scope, eff, assigned, item in items:
+        if item.get("phase", "any") == "any":
+            out.append((scope, eff, assigned))
+            continue
+        ok = [t for t in target_ids if reaches_attack(item, t, target_phase)]
+        reach = ok if scope == "all" else [t for t in assigned if t in ok]
+        if reach:
+            out.append(("first", eff, reach))
+    return out
 
 
 def defend_mods_by_scope(items) -> tuple:
@@ -225,7 +289,7 @@ def unit_size(unit: dict, state: dict) -> int:
 
 
 def phase_ok(opt: dict, attack_phase: str) -> bool:
-    # attack_phase "any" = "Not shooting" mode: no weapon is selected, so abilities of every phase are offered
+    # attack_phase "any" (an ability attack with no phase) matches every card phase
     return attack_phase == "any" or opt.get("phase", "any") in ("any", attack_phase)
 
 

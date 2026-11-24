@@ -47,8 +47,8 @@ def weapon_label(w):
         die = w["surge"] + (f"+{w['surge_plus']}" if w.get("surge_plus") else "")
         surge = f", S {die} ({'/'.join(w.get('surge_tags', []))})"
     kws = f", {', '.join(w['keywords'])}" if w.get("keywords") else ""
-    return (f"{w['name']} [{'ranged' if w['phase'] == 'ranged' else 'melee'}] - "
-            f"RoA {roa}, Hit {w['hit']}+, DMG {dmg}{surge}{kws}")
+    tag = "[MELEE]" if w["phase"] == "melee" else "[ranged]"
+    return f"{tag} {w['name']} - RoA {roa}, Hit {w['hit']}+, DMG {dmg}{surge}{kws}"
 
 
 def target_input(label, key, default, allow_null=False):
@@ -173,14 +173,14 @@ def configure_weapon(w, udata, a_unit, opt_prefix, a_state, target_size, target_
     return {"weapon": weapon, "effects": effects, "opts": opts}
 
 
-def impact_inputs(imp, udata, a_unit, models, a_state, target_size, target_tags):
+def impact_inputs(imp, udata, a_unit, models, a_state, target_size, target_tags, disabled=False):
     """Impact rolls for a close combat attack: a separate extra attack, rolled like one more weapon.
 
     Attacker keywords, cards and options never touch it; only defender effects with scope "all" do.
     `imp` is the unit's "impact" data. Returns (Weapon | None, ticked Impact upgrade options).
     """
     ik = f"a_imp_{a_unit}"
-    if not st.checkbox("Impact rolls (separate extra attack; ignores attacker keywords)", key=ik,
+    if not st.checkbox("Impact rolls (separate extra attack; ignores attacker keywords)", key=ik, disabled=disabled,
                        help="Rolled like an additional weapon: only defender effects set to apply to all "
                             "weapons (e.g. Tough, Dodge) affect it. Attacker cards, passives and keywords do not."):
         return None, []
@@ -296,30 +296,33 @@ def custom_defend_box(title, p, help_text, whole_attack=False):
     return eff
 
 
-def usable(side, names, own_size, phase):
-    """Split card names into (usable, ignored) for this attack phase and the unit's Size."""
+def usable(side, names, own_size, tphase):
+    """Split card names into (usable, ignored). A card is ignored when the unit's Size does not fit or, once
+    there are attacks, when its phase (ranged / melee) matches none of them."""
     used = []
     for n in names:
         c = CARDS[side][n]
         want = (c.get("when") or {}).get("own_size")
-        if (phase == "any" or c.get("phase", "any") in ("any", phase)) and (want is None or want == own_size):
+        if (not tphase or rules.reaches_any(c, tphase)) and (want is None or want == own_size):
             used.append(n)
     return used, [n for n in names if n not in used]
 
 
-def card_assignment(side, names, target_ids, labels, key):
+def card_assignment(side, names, target_ids, labels, key, tphase, caption=True):
     """Let the player pick which attack(s) each card applies to.
 
-    Cards tagged scope "all" reach every attack and need no choice. Other cards default to the main
-    weapon; when there is more than one attack (Sidearms, Impact) a selector appears per card.
+    Cards tagged scope "all" reach every attack and need no choice. Other cards default to the first attack
+    whose phase fits the card; when there is more than one attack a selector appears per card.
     Returns {card name: [target ids]} for the cards that are not scope "all".
     """
     scoped = [n for n in names if not rules.is_all_scope(CARDS[side][n]) and not rules.card_targets(CARDS[side][n])]
+    dflt = {n: rules.default_target(CARDS[side][n], target_ids, tphase) for n in scoped}
     if len(target_ids) < 2 or not scoped:
-        return {n: [target_ids[0] if target_ids else "main"] for n in scoped}
-    st.caption("Choose which attack each card applies to (cards tagged [all weapons] apply to every attack).")
+        return {n: ([dflt[n]] if dflt[n] else []) for n in scoped}
+    if caption:
+        st.caption("Choose which attack each card applies to (cards tagged [all weapons] apply to every attack).")
     sig = "|".join(target_ids)   # the selector resets if the set of attacks changes
-    return {n: st.multiselect(f"{n} - applies to", target_ids, default=[target_ids[0]], key=f"{key}_{n}_{sig}",
+    return {n: st.multiselect(f"{n} - applies to", target_ids, default=[dflt[n]], key=f"{key}_{n}_{sig}",
                               format_func=lambda t: labels[t]) for n in scoped}
 
 
@@ -328,6 +331,19 @@ def unit_select(label, side, faction, names, key):
     first = DEFAULTS.get(side, {}).get(faction)
     idx = names.index(first) if (key not in st.session_state and first in names) else 0
     return st.selectbox(label, names, index=idx, key=key)
+
+
+def is_exempt(w):
+    """Sidearm and Specialist weapons are never grayed out and never gray out other attacks."""
+    kws = w.get("keywords", [])
+    return bool(rules.find_keyword(kws, "sidearm") or rules.find_keyword(kws, "specialist"))
+
+
+def group_locked(key, group):
+    """True when another attack of the same group (one ranged weapon-or-Impact, or one melee weapon) is ticked."""
+    if st.session_state.get(key, False):
+        return False   # a ticked box can always be unticked
+    return any(k != key and st.session_state.get(k, False) for k in group)
 
 
 def swap_sides():
@@ -394,7 +410,7 @@ with left:
     st.subheader("Attacker")
     a_faction = st.selectbox("Faction", FACTIONS + [CUSTOM], key="a_fac")
     a_opts = []      # ticked unit options of every weapon in this attack
-    entries = []     # one {"weapon", "effects", "opts"} per weapon fired (main weapon first)
+    entries = []     # one {"id", "phase", "weapon", "effects", "opts"} per weapon ticked
     a_size = 2
     a_unit = "custom"
     a_all_opts = []          # ticked unit options that apply to every weapon (scope "all")
@@ -402,7 +418,7 @@ with left:
     ab_attacks = []          # [(target id, Weapon)] ability attacks that roll to hit and count as guns
     auto_weapons = []        # [(target id, Weapon)] auto-hit abilities (e.g. Zeratul), each a separate extra attack
     direct_abilities = []    # [(label, damage)] automatic damage abilities (no dice at all)
-    direct_only = False      # only the automatic damage, no weapon attack
+    target_phase = {}        # {attack id: "ranged" | "melee" | "any"}: cards and options are matched per attack
 
     if a_faction != CUSTOM:
         unit_names = [u for u, d in UNITS[a_faction].items() if d["weapons"]]
@@ -410,101 +426,104 @@ with left:
         udata = UNITS[a_faction][a_unit]
         a_state = toggle_inputs(udata, f"a_{a_unit}")
         a_size = rules.unit_size(udata, a_state)
-    not_shooting = st.checkbox("Not shooting (abilities only)", key="not_shooting",
-                               help="No weapon attack: the weapon, Sidearm and attacker-buff controls are hidden. "
-                                    "What remains: Impact, ability attacks, auto-hit abilities, direct damage and debuff cards.")
 
-    if not_shooting:
-        a_phase = "any"   # no weapon selected: abilities of every phase are offered
-        if a_faction == CUSTOM:
-            a_size = st.number_input("Attacker Size (for size-based cards)", 0, 6, 2, key="a_size_ns")
-        st.caption("Not shooting: no weapon attack is rolled.")
-    elif a_faction == CUSTOM:
-        a_phase = "ranged"
-        c1, c2 = st.columns(2)
-        models = c1.number_input("Models firing", 1, 60, 3, key="a_models")
-        roa = c2.number_input("RoA (dice per model)", 0, 10, 2, key="a_roa")
-        c1, c2 = st.columns(2)
-        hit = target_input("Hit", "a_hit", 4)
-        dmg = c2.number_input("DMG", 0, 10, 1, key="a_dmg")
-        c1, c2, c3 = st.columns(3)
-        surge_die = c1.selectbox("S Dice", ["None", "D3", "D6"], key="a_sd")
-        surge_plus = c2.number_input("S Dice +", 0, 3, 0, key="a_sp", disabled=surge_die == "None")
-        surge_tags = c3.multiselect("Surge Type", COMBAT_TAGS, key="a_st", disabled=surge_die == "None")
-        c1, c2, c3 = st.columns(3)
-        pierce_x = c1.number_input("PIERCE (X)", 0, 10, 0, key="a_px")
-        pierce_tag = c2.selectbox("PIERCE vs tag", [""] + COMBAT_TAGS, key="a_pt", disabled=pierce_x == 0)
-        a_phase = c3.selectbox("Attack type", ["ranged", "melee"], key="a_ph")
-        c1, c2, c3 = st.columns(3)
-        w_prec = c1.number_input("PRECISION (X)", 0, 10, 0, key="a_prec")
-        w_crit = c2.number_input("CRITICAL HIT (X)", 0, 10, 0, key="a_crit")
-        w_ae = c3.number_input("ANTI-EVADE (X)", 0, 4, 0, key="a_ae")
-        long_range = st.checkbox("Long Range (target beyond normal range: -1 to hit)", key="a_lr",
-                                 help="Makes the Hit roll 1 harder (e.g. 3+ becomes 4+).")
-        c1, c2 = st.columns(2)
-        burst_fire = c1.checkbox("Burst Fire (target within range: increase RoA)", key="a_bf",
-                                 help="Increases the RoA of the weapon.")
-        burst_dice = c2.number_input("Burst Fire bonus RoA (per model)", 1, 10, 3, key="a_bfd",
-                                     disabled=not burst_fire)
-        w_cf = st.number_input("CONCENTRATED FIRE (X, 0 = off)", 0, 10, 0, key="a_cf",
-                               help="The attack can destroy at most X models; excess damage is ignored.")
-        a_size = st.number_input("Attacker Size (for size-based cards)", 0, 6, 2, key="a_size")
-        weapon = Weapon(models, roa, hit, dmg, surge_die, surge_plus, surge_tags, pierce_x, pierce_tag,
-                        w_prec, w_crit, w_ae, concentrated_fire=w_cf, name="Custom weapon")
-        entries.append({"weapon": weapon, "opts": [],
-                        "effects": ([{"hit_mod": -1}] if long_range else [])
-                                   + ([{"bonus_dice_per_model": burst_dice}] if burst_fire else [])})
-    else:
-        incl_melee = st.checkbox("Include close combat weapons", value=False, key="a_melee")
+        # WEAPONS: tick every weapon used in this attack (none ticked = abilities only). None by default.
         all_w = [w for w in udata["weapons"] if rules.toggles_match(w.get("requires"), a_state)]
-        weapons = [w for w in all_w if incl_melee or w["phase"] == "ranged"]
-        if not weapons:
-            weapons = all_w
-            st.info(f"{a_unit} has no ranged weapons available, showing close combat weapons.")
-        w = st.selectbox("Weapon", weapons, key=f"a_w_{a_unit}_{state_key(a_state)}", format_func=weapon_label)
-        a_phase = w["phase"]
-        main = configure_weapon(w, udata, a_unit, f"a_{a_unit}", a_state, d_size, d_tags)
-        entries.append(main)
-        a_opts += main["opts"]
+        st.markdown("**Weapons** (tick each weapon used; tick none for an abilities-only action)")
+        wkey = lambda w: f"a_wsel_{a_unit}_{w['name']}"
+        ranged_w = [w for w in all_w if w["phase"] == "ranged"]
+        melee_w = [w for w in all_w if w["phase"] != "ranged"]
+        impact_key = f"a_imp_{a_unit}"
+        # One ranged weapon OR Impact, and one melee weapon, at a time: the others of the group are grayed out.
+        # Sidearm / Specialist weapons are exempt (never grayed, never graying others).
+        ranged_group = [wkey(w) for w in ranged_w if not is_exempt(w)] + ([impact_key] if udata.get("impact") else [])
+        melee_group = [wkey(w) for w in melee_w if not is_exempt(w)]
 
-        # SIDEARM weapons are fired in the same attack as the main weapon: tick the ones to add.
-        sidearms = [x for x in all_w if x["name"] != w["name"] and x["phase"] == w["phase"]
-                    and rules.find_keyword(x.get("keywords", []), "sidearm")]
-        if sidearms:
-            st.markdown("**Sidearm weapons** (fired in the same attack as the weapon above)")
-        for sw in sidearms:
-            if st.checkbox(f"Also fire: {sw['name']}", key=f"a_sa_{a_unit}_{sw['name']}",
-                           help=weapon_label(sw)):
-                with st.container(border=True):
-                    extra = configure_weapon(sw, udata, a_unit, f"a_{a_unit}_sa_{sw['name']}",
-                                             a_state, d_size, d_tags)
-                entries.append(extra)
-                a_opts += extra["opts"]
+        def weapon_list(ws, group):
+            for w in ws:
+                locked = not is_exempt(w) and group_locked(wkey(w), group)
+                if st.checkbox(weapon_label(w), value=False, key=wkey(w), disabled=locked):
+                    with st.container(border=True):
+                        cfg = configure_weapon(w, udata, a_unit, f"a_{a_unit}_w_{w['name']}", a_state, d_size, d_tags)
+                    cfg.update(id=f"w:{w['name']}", phase=w["phase"])
+                    entries.append(cfg)
+                    a_opts.extend(cfg["opts"])
+
+        weapon_list(ranged_w, ranged_group)
+        if udata.get("impact"):   # Impact sits between the ranged and the melee weapons and is always offered
+            models_ref = entries[0]["weapon"].models if entries else udata["models_default"]
+            impact_weapon, imp_opts = impact_inputs(udata["impact"], udata, a_unit, models_ref, a_state, d_size, d_tags,
+                                                    disabled=group_locked(impact_key, ranged_group))
+            a_opts += imp_opts
+        weapon_list(melee_w, melee_group)
+    else:
+        c1, c2 = st.columns(2)
+        # the custom weapon and Impact are both "ranged" when its type is ranged: only one of them at a time
+        c_ranged = st.session_state.get("a_ph", "ranged") == "ranged"
+        use_custom = st.checkbox("Fire the custom weapon (leave unticked for an abilities-only action)", value=False, key="a_custom_on",
+                                 disabled=c_ranged and st.session_state.get("a_imp_custom", False))
+        if use_custom:
+            c1, c2 = st.columns(2)
+            models = c1.number_input("Models firing", 1, 60, 3, key="a_models")
+            roa = c2.number_input("RoA (dice per model)", 0, 10, 2, key="a_roa")
+            c1, c2 = st.columns(2)
+            hit = target_input("Hit", "a_hit", 4)
+            dmg = c2.number_input("DMG", 0, 10, 1, key="a_dmg")
+            c1, c2, c3 = st.columns(3)
+            surge_die = c1.selectbox("S Dice", ["None", "D3", "D6"], key="a_sd")
+            surge_plus = c2.number_input("S Dice +", 0, 3, 0, key="a_sp", disabled=surge_die == "None")
+            surge_tags = c3.multiselect("Surge Type", COMBAT_TAGS, key="a_st", disabled=surge_die == "None")
+            c1, c2, c3 = st.columns(3)
+            pierce_x = c1.number_input("PIERCE (X)", 0, 10, 0, key="a_px")
+            pierce_tag = c2.selectbox("PIERCE vs tag", [""] + COMBAT_TAGS, key="a_pt", disabled=pierce_x == 0)
+            c_phase = c3.selectbox("Attack type", ["ranged", "melee"], key="a_ph")
+            c1, c2, c3 = st.columns(3)
+            w_prec = c1.number_input("PRECISION (X)", 0, 10, 0, key="a_prec")
+            w_crit = c2.number_input("CRITICAL HIT (X)", 0, 10, 0, key="a_crit")
+            w_ae = c3.number_input("ANTI-EVADE (X)", 0, 4, 0, key="a_ae")
+            long_range = st.checkbox("Long Range (target beyond normal range: -1 to hit)", key="a_lr",
+                                     help="Makes the Hit roll 1 harder (e.g. 3+ becomes 4+).")
+            c1, c2 = st.columns(2)
+            burst_fire = c1.checkbox("Burst Fire (target within range: increase RoA)", key="a_bf",
+                                     help="Increases the RoA of the weapon.")
+            burst_dice = c2.number_input("Burst Fire bonus RoA (per model)", 1, 10, 3, key="a_bfd",
+                                         disabled=not burst_fire)
+            w_cf = st.number_input("CONCENTRATED FIRE (X, 0 = off)", 0, 10, 0, key="a_cf",
+                                   help="The attack can destroy at most X models; excess damage is ignored.")
+            weapon = Weapon(models, roa, hit, dmg, surge_die, surge_plus, surge_tags, pierce_x, pierce_tag,
+                            w_prec, w_crit, w_ae, concentrated_fire=w_cf, name="Custom weapon")
+            entries.append({"weapon": weapon, "opts": [], "id": "w:Custom weapon", "phase": c_phase,
+                            "effects": ([{"hit_mod": -1}] if long_range else [])
+                                       + ([{"bonus_dice_per_model": burst_dice}] if burst_fire else [])})
+        a_size = st.number_input("Attacker Size (for size-based cards)", 0, 6, 2, key="a_size")
+
+    for e in entries:
+        target_phase[e["id"]] = e["phase"]
+    ticked_phases = {e["phase"] for e in entries}   # only passives are limited to these phases
+    offered = lambda item: rules.phase_offered(item, ticked_phases)
 
     if a_faction != CUSTOM:
-        a_all_opts = [] if not_shooting else option_inputs(
+        a_all_opts = option_inputs(
             [o for o in udata.get("options", [])
-             if o["side"] == "attack" and rules.is_all_scope(o) and rules.phase_ok(o, a_phase)],
+             if o["side"] == "attack" and rules.is_all_scope(o) and offered(o)],
             f"a_{a_unit}_all", a_state, d_size, d_tags,
-            heading="Unit abilities that apply to every weapon")
+            heading="Unit abilities that apply to every weapon") if entries else []
         a_opts += a_all_opts
-        models_ref = main["weapon"].models if entries else udata["models_default"]
-        if (a_phase == "melee" or not_shooting) and udata.get("impact"):   # Not shooting keeps Impact
-            impact_weapon, imp_opts = impact_inputs(udata["impact"], udata, a_unit, models_ref,
-                                                    a_state, d_size, d_tags)
-            a_opts += imp_opts
+        models_ref = entries[0]["weapon"].models if entries else udata["models_default"]
         for ab in rules.ability_attack_list(udata):
-            if rules.phase_ok(ab, a_phase):
+            if offered(ab):
                 abw = ability_attack_inputs(ab, a_unit, models_ref)
                 if abw is not None and abw.roa > 0:
                     ab_attacks.append((f"ab:{abw.name}", abw))
+                    target_phase[f"ab:{abw.name}"] = ab.get("phase", "any")
         for ah in rules.auto_hit_list(udata):
-            if rules.phase_ok(ah, a_phase):
+            if offered(ah):
                 aw = auto_hit_inputs(ah, a_unit)
                 if aw is not None and aw.roa > 0:
                     auto_weapons.append((f"auto:{aw.name}", aw))
+                    target_phase[f"auto:{aw.name}"] = ah.get("phase", "any")
         for dd in rules.direct_damage_list(udata):
-            if rules.phase_ok(dd, a_phase):
+            if offered(dd):
                 dlabel = dd.get("label", "Direct damage")
                 if st.checkbox(f"{dlabel} (direct damage: no dice, no Armour or Evade)", key=f"a_dd_{a_unit}_{dlabel}",
                                help=dd.get("note", "Damage dealt straight to the unit. Defender dice, Total damage reduction "
@@ -514,8 +533,9 @@ with left:
                             st.caption(f"Check the numbers: {dd['verify']}")
                         dval = st.number_input("Direct damage", 0, 100, int(dd.get("dmg", 1)), key=f"a_dd_{a_unit}_{dlabel}_dmg")
                     direct_abilities.append((dlabel, int(dval)))
-    elif a_phase == "melee" or not_shooting:
-        if st.checkbox("Impact rolls (separate extra attack; ignores attacker keywords)", key="a_imp_custom"):
+    else:   # Impact is always offered
+        if st.checkbox("Impact rolls (separate extra attack; ignores attacker keywords)", key="a_imp_custom",
+                       disabled=bool(entries) and entries[0]["phase"] == "ranged"):
             c1, c2, c3 = st.columns(3)
             i_dice = c1.number_input("Impact dice (total)", 0, 60, 1, key="a_imp_cd")
             with c2:
@@ -529,68 +549,61 @@ with left:
                                    "not reduced by Total damage reduction.")
         if cdd:
             direct_abilities.append(("Direct damage", int(cdd)))
-    if direct_abilities and not not_shooting:
-        direct_only = st.checkbox("Only the direct damage (no weapon attack)", key=f"a_ddonly_{a_unit}",
-                                  help="Tick when the ability is used on its own, without firing the weapon above.")
 
-    # The attacks in this pool: the main weapon, each ticked Sidearm, and Impact rolls (defender cards only).
-    entry_ids = [] if not_shooting else ["main"] + [f"sa:{e['weapon'].name}" for e in entries[1:]]
+    # The attacks in this pool: each ticked weapon, ability attacks, Impact rolls and auto-hit abilities.
+    entry_ids = [e["id"] for e in entries]
     impact_on = impact_weapon is not None and impact_weapon.roa > 0
+    if impact_on:
+        target_phase["impact"] = rules.IMPACT_PHASE
     ab_ids = [tid for tid, _ in ab_attacks]
-    def_target_ids_now = entry_ids + ab_ids + (["impact"] if impact_on else []) + [tid for tid, _ in auto_weapons]
+    def_target_ids = entry_ids + ab_ids + (["impact"] if impact_on else []) + [tid for tid, _ in auto_weapons]
     target_labels = {"impact": "Impact rolls (separate attack)"}
     target_labels.update({tid: f"{w.name} (ability attack)" for tid, w in ab_attacks})
-    if entries:
-        target_labels["main"] = f"Main weapon ({entries[0]['weapon'].name})"
     target_labels.update({tid: f"{w.name} (separate attack)" for tid, w in auto_weapons})
-    target_labels.update({tid: f"Sidearm ({e['weapon'].name})" for tid, e in zip(entry_ids[1:], entries[1:])})
+    target_labels.update({e["id"]: f"{e['weapon'].name} [{e['phase']}]" for e in entries})
 
     st.markdown("**Tactical cards / other buffs**")
-    atk_card_names = cards_for("attacker", a_faction)
-    if not_shooting and not ab_attacks:   # only debuffs (and Impact-only cards) matter when nothing else rolls to hit
-        atk_card_names = [n for n in atk_card_names if rules.is_opponent_card(CARDS["attacker"][n])
-                          or (impact_on and "impact" in rules.card_targets(CARDS["attacker"][n]))]
-    atk_cards = st.multiselect("Attacker cards", atk_card_names, key=f"a_cards_{a_faction}{('_ns' + str(int(bool(ab_attacks))) + str(int(impact_on))) if not_shooting else ''}",
+    atk_cards = st.multiselect("Attacker buffs", cards_for("attacker", a_faction), key=f"a_cards_{a_faction}",
                                format_func=lambda n: rules.card_label(n, CARDS["attacker"][n]),
-                               help="Shows your faction's cards plus Generic ones. Debuff cards (e.g. Potent Bile) change the defender's numbers. A card affects the main weapon unless you pick other "
-                                    "attacks for it (Sidearms) or it is tagged [all weapons]. Attacker cards never affect Impact rolls "
-                                    "or auto-hit abilities, except cards marked [Impact only], which affect only Impact rolls. "
-                                    "Cards that don't match the weapon type (ranged/melee) or the unit's Size are ignored. "
-                                    "Edit cards.json to add more or to change a card's 'scope'.")
-    atk_used, atk_skipped = usable("attacker", atk_cards, a_size, a_phase)
+                               help="Shows your faction's cards plus Generic ones. Debuff cards (e.g. Potent Bile) change the "
+                                    "defender's numbers. A card only affects attacks of its phase (tag [ranged only] / [melee only]). "
+                                    "It affects the first matching weapon unless you pick other attacks for it, or it is tagged "
+                                    "[all weapons]. Attacker cards never affect Impact rolls or auto-hit abilities, except cards marked "
+                                    "[Impact only]. Cards that match none of the ticked attacks or the unit's Size are ignored. "
+                                    "Edit cards.json to add more or to change a card's 'scope' or 'phase'.")
+    atk_used, atk_skipped = usable("attacker", atk_cards, a_size, target_phase)
     # Cards fixed to one kind of attack (e.g. "impact": Malignant Creep) only work while that attack is on.
     for c in list(atk_used):
-        if any(t not in def_target_ids_now for t in rules.card_targets(CARDS["attacker"][c])):
+        if any(t not in def_target_ids for t in rules.card_targets(CARDS["attacker"][c])):
             atk_used.remove(c)
             atk_skipped.append(c)
-    atk_assign = card_assignment("attacker", atk_used, def_target_ids_now if not_shooting else entry_ids + ab_ids,
-                                 target_labels, "a_cardto")
-    custom_first = {} if not_shooting else custom_attack_box("Custom Attack Modifiers - Main Weapon", "ca",
-                                                             "Applies to the main weapon only.")
-    # One box per Sidearm that is actually being fired, so units with several Sidearms are covered.
-    custom_sides = {}
-    for i, e in enumerate(entries[1:], start=1):
-        sa_name = e["weapon"].name
-        custom_sides[i] = custom_attack_box(f"Custom Attack Modifiers - Sidearm: {sa_name}", f"cs_{a_unit}_{sa_name}",
-                                            f"Applies to {sa_name} only (it is fired in the same attack as the main weapon).")
+    own_atk_cards = [c for c in atk_used if not rules.is_opponent_card(CARDS["attacker"][c])]
+    atk_debuffs = [c for c in atk_used if rules.is_opponent_card(CARDS["attacker"][c])]
+    atk_assign = card_assignment("attacker", own_atk_cards, entry_ids + ab_ids, target_labels, "a_cardto", target_phase)
+    # debuffs land on the defender's rolls, so they can be pointed at ANY attack (Impact and auto-hits too)
+    atk_assign.update(card_assignment("attacker", atk_debuffs, def_target_ids, target_labels, "a_debuffto",
+                                      target_phase, caption=not own_atk_cards))
+    # One custom attacker box per ticked weapon and per ability attack.
+    custom_atk = {e["id"]: custom_attack_box(f"Custom Attack Modifiers - {e['weapon'].name}", f"ca_{a_unit}_{e['id']}",
+                                             f"Applies to {e['weapon'].name} only.") for e in entries}
     custom_ab = {tid: custom_attack_box(f"Custom Attack Modifiers - {w.name} (ability attack)", f"cab_{a_unit}_{tid}",
                                         f"Applies to {w.name} only.") for tid, w in ab_attacks}
 
-# The defender's cards come after the attacker block because they can target Sidearms, Impact rolls
-# and auto-hit abilities.
-def_target_ids = def_target_ids_now
+# The defender's cards come after the attacker block because they can target any attack.
 with def_card_box:
     st.markdown("**Tactical cards / other buffs**")
-    def_cards = st.multiselect("Defender cards", cards_for("defender", d_faction), key=f"d_cards_{d_faction}",
+    def_cards = st.multiselect("Defender buffs", cards_for("defender", d_faction), key=f"d_cards_{d_faction}",
                                format_func=lambda n: rules.card_label(n, CARDS["defender"][n]),
-                               help="Debuff cards (e.g. Debilitating Saliva) change the attacker's numbers. A card affects the attacker's main weapon unless you pick other attacks for it (Sidearms, Impact rolls, "
-                                    "auto-hit abilities) or it is tagged [all weapons], which applies to every attack including those. "
-                                    "Total damage reduction, HP and Shield bonuses always apply to the whole attack.")
-    def_used, def_skipped = usable("defender", def_cards, d_size, a_phase)
-    def_assign = card_assignment("defender", def_used, def_target_ids, target_labels, "d_cardto")
+                               help="Debuff cards (e.g. Debilitating Saliva) change the attacker's numbers. A card only affects "
+                                    "attacks of its phase (tag [ranged only] / [melee only]). It affects the first matching attack "
+                                    "unless you pick other attacks for it (weapons, Impact rolls, abilities) or it is tagged "
+                                    "[all weapons], which applies to every matching attack. "
+                                    "Total damage reduction, HP and Shield bonuses apply to the whole attack.")
+    def_used, def_skipped = usable("defender", def_cards, d_size, target_phase)
+    def_assign = card_assignment("defender", def_used, def_target_ids, target_labels, "d_cardto", target_phase)
 
-# One custom defender box per attack (main weapon, each Sidearm, Impact, auto-hit abilities), like the
-# attacker's boxes. Extra Shield and Total damage reduction sit in the first box but cover the whole attack.
+# One custom defender box per attack, like the attacker's boxes. Extra Shield and Total damage reduction
+# sit in the first box but cover the whole attack (with no attacks at all there is one box for just those).
 custom_defs = {}
 with def_custom_box:
     for tid in def_target_ids:
@@ -602,65 +615,70 @@ with def_custom_box:
         if tid == def_target_ids[0]:
             note += " Extra Shield and Total damage reduction always apply to the whole attack."
         custom_defs[tid] = custom_defend_box(title, f"cd_{a_unit}_{tid}", note, whole_attack=(tid == def_target_ids[0]))
+    if not def_target_ids:
+        custom_whole = custom_defend_box("Custom defender modifiers", f"cd_{a_unit}_none",
+                                         "No attack is rolled; Extra Shield and Total damage reduction still apply to the damage.",
+                                         whole_attack=True)
 
 # ------------------------------- Run --------------------------------------- #
 seed = None  # fresh random results on every run
 
 defender = Defender(d_tags, armour, evade, evade_on, d_hp, d_shield, d_models, d_vis, d_exist)
 
-
-d_opts_used = [o for o in d_opts if rules.phase_ok(o, a_phase)]
-d_opts_skipped = [o["name"] for o in d_opts if not rules.phase_ok(o, a_phase)]
-
-# SCOPE. Cards tagged scope "all" reach every attack. Other cards reach only the attacks the player
-# picked for them (default: the main weapon). Each Sidearm also gets its own custom box. Impact rolls
-# are a separate extra attack: no attacker effects at all; defender cards can target them.
+# PHASE + SCOPE. Every attack has a phase (ranged / melee; Impact is ranged). A card or option with a phase
+# only reaches attacks of that phase. Cards tagged scope "all" reach every (matching) attack; other cards
+# reach the attacks the player picked for them (default: the first matching attack).
 # "Opponent" cards (debuffs, e.g. Potent Bile / Debilitating Saliva) are played by one side but change the
 # OTHER side's numbers: attacker cards of that kind become defender effects and defender cards of that
-# kind become attacker effects. They keep their scope and "applies to" choice.
-own_atk_cards = [c for c in atk_used if not rules.is_opponent_card(CARDS["attacker"][c])]
-atk_debuffs = [c for c in atk_used if rules.is_opponent_card(CARDS["attacker"][c])]
+# kind become attacker effects. They keep their scope, phase and "applies to" choice.
 own_def_cards = [c for c in def_used if not rules.is_opponent_card(CARDS["defender"][c])]
 def_debuffs = [c for c in def_used if rules.is_opponent_card(CARDS["defender"][c])]
+d_opts_used = [o for o in d_opts if not target_phase or rules.reaches_any(o, target_phase)]
+d_opts_skipped = [o["name"] for o in d_opts if o not in d_opts_used]
 
 
-main_tid = def_target_ids[0] if def_target_ids else "main"   # attack that "first"-scope effects default to
+def debuff_hits(name, tid):
+    """Does this defender debuff card reach the attack with this id (scope, choice and phase)?"""
+    card = CARDS["defender"][name]
+    return (rules.reaches_attack(card, tid, target_phase)
+            and (rules.is_all_scope(card) or tid in def_assign.get(name, [def_target_ids[0]])))
 
 
-def debuff_hits(card, tid):
-    """Does this defender debuff card reach the attack with this id?"""
-    return rules.is_all_scope(card) or tid in def_assign.get(card_name_of[id(card)], [main_tid])
+def debuff_fx(tid):
+    return [CARDS["defender"][c]["effects"] for c in def_debuffs if debuff_hits(c, tid)]
 
 
-card_name_of = {id(CARDS["defender"][c]): c for c in def_debuffs}
-all_attack_fx = ([CARDS["attacker"][c]["effects"] for c in own_atk_cards if rules.is_all_scope(CARDS["attacker"][c])]
-                 + [rules.option_effects(o, d_size) for o in a_all_opts])
-attack_mods = []
-for i, e in enumerate(entries):
-    picked = [CARDS["attacker"][c]["effects"] for c in own_atk_cards
-              if c in atk_assign and entry_ids[i] in atk_assign[c]]
-    debuffs = [CARDS["defender"][c]["effects"] for c in def_debuffs if debuff_hits(CARDS["defender"][c], entry_ids[i])]
-    extra = picked + debuffs + [custom_first if i == 0 else custom_sides[i]]
-    attack_mods.append(combine(e["effects"] + all_attack_fx + extra, AttackMods))
+def attacker_fx(tid):
+    """Attacker-side effects reaching one weapon / ability attack: [all weapons] cards and options, plus the
+    cards picked for it, each only if its phase fits that attack."""
+    ph = target_phase[tid]
+    fx = [CARDS["attacker"][c]["effects"] for c in own_atk_cards
+          if rules.phase_ok(CARDS["attacker"][c], ph)
+          and (rules.is_all_scope(CARDS["attacker"][c]) or tid in atk_assign.get(c, []))]
+    return fx + [rules.option_effects(o, d_size) for o in a_all_opts if rules.phase_ok(o, ph)]
 
-ab_mods = {}
-for tid, aw in ab_attacks:   # ability attacks count as guns: cards, [all weapons] effects and their own custom box apply
-    picked = [CARDS["attacker"][c]["effects"] for c in own_atk_cards if c in atk_assign and tid in atk_assign[c]]
-    debuffs = [CARDS["defender"][c]["effects"] for c in def_debuffs if debuff_hits(CARDS["defender"][c], tid)]
-    ab_mods[tid] = combine(all_attack_fx + picked + debuffs + [custom_ab[tid]], AttackMods)
 
-def_items = ([(rules.scope_of(o), rules.option_effects(o, d_size), [main_tid]) for o in d_opts_used]
-             + [(rules.scope_of(CARDS["defender"][c]), CARDS["defender"][c]["effects"], def_assign.get(c, [main_tid]))
-                for c in own_def_cards]
-             # debuff cards played by the attacker: defender effects on the attacks they were assigned to
-             + [(rules.scope_of(CARDS["attacker"][c]), CARDS["attacker"][c]["effects"], atk_assign.get(c, [main_tid]))
-                for c in atk_debuffs]
-             # each custom box applies to its own attack (its Extra Shield / Total reduction stay attack-wide)
-             + [("first", custom_defs[t], [t]) for t in def_target_ids])
+attack_mods = [combine(e["effects"] + attacker_fx(e["id"]) + debuff_fx(e["id"]) + [custom_atk[e["id"]]], AttackMods)
+               for e in entries]
+ab_mods = {tid: combine(attacker_fx(tid) + debuff_fx(tid) + [custom_ab[tid]], AttackMods) for tid, _ in ab_attacks}
+
+def_items = rules.phase_filtered_items(
+    [(rules.scope_of(o), rules.option_effects(o, d_size),
+      [t for t in [rules.default_target(o, def_target_ids, target_phase)] if t], o)
+     for o in d_opts_used]
+    + [(rules.scope_of(CARDS["defender"][c]), CARDS["defender"][c]["effects"], def_assign.get(c, []),
+        CARDS["defender"][c]) for c in own_def_cards]
+    # debuff cards played by the attacker: defender effects on the attacks they were assigned to
+    + [(rules.scope_of(CARDS["attacker"][c]), CARDS["attacker"][c]["effects"], atk_assign.get(c, []),
+        CARDS["attacker"][c]) for c in atk_debuffs],
+    def_target_ids, target_phase)
+# each custom box applies to its own attack (its Extra Shield / Total reduction stay attack-wide)
+def_items += [("first", custom_defs[t], [t]) for t in def_target_ids]
+if not def_target_ids:
+    def_items.append(("first", custom_whole, []))
 def_mods, def_by_target = rules.defend_mods_by_target(def_items, def_target_ids)
 
-attacks = ([] if not_shooting else
-           [(e["weapon"], m, def_by_target[entry_ids[i]]) for i, (e, m) in enumerate(zip(entries, attack_mods))])
+attacks = [(e["weapon"], m, def_by_target[e["id"]]) for e, m in zip(entries, attack_mods)]
 ab_idx = set()
 for tid, aw in ab_attacks:
     ab_idx.add(len(attacks))
@@ -670,23 +688,24 @@ if impact_on:
     impact_idx = len(attacks)
     impact_mods = combine([CARDS["attacker"][c]["effects"] for c in own_atk_cards
                            if "impact" in rules.card_targets(CARDS["attacker"][c])]
-                          + [CARDS["defender"][c]["effects"] for c in def_debuffs
-                             if debuff_hits(CARDS["defender"][c], "impact")], AttackMods)
+                          + debuff_fx("impact"), AttackMods)
     attacks.append((impact_weapon, impact_mods, def_by_target["impact"]))
 auto_idx = set()
 for tid, aw in auto_weapons:
     auto_idx.add(len(attacks))
-    attacks.append((aw, AttackMods(), def_by_target[tid]))
+    attacks.append((aw, combine(debuff_fx(tid), AttackMods), def_by_target[tid]))
 
 direct_total = sum(v for _, v in direct_abilities)
-if direct_only or not attacks:   # abilities on their own with nothing to roll: no dice at all
+no_attacks = not attacks
+if no_attacks:   # only direct damage (or nothing): roll no dice at all
     attacks = [(Weapon(1, 0, 2, 0, name="(no weapon attack)"), None)]
-    impact_idx, auto_idx, ab_idx = None, set(), set()
 res = simulate_attacks(attacks, defender, def_mods, n=N_SIMS, seed=seed, direct_damage=direct_total)
 meta = res["meta"]
 
 if atk_skipped or def_skipped or d_opts_skipped:
-    st.info("Ignored (wrong attack type or unit Size for this attack): " + ", ".join(atk_skipped + def_skipped + d_opts_skipped))
+    st.info("Ignored (wrong attack type or unit Size for the ticked attacks): " + ", ".join(atk_skipped + def_skipped + d_opts_skipped))
+if no_attacks and not direct_total:
+    st.warning("No attack is selected: tick a weapon or an ability to roll something.")
 
 st.divider()
 st.subheader("Results")
@@ -699,7 +718,7 @@ m2.metric("Average models killed", f"{kills.mean():.2f}")
 m3.metric("P(at least 1 kill)", f"{(kills >= 1).mean():.1%}")
 m4.metric("P(unit wiped)", f"{(kills >= d_models).mean():.1%}")
 
-for i, m in enumerate(meta["weapons"]):
+for i, m in enumerate([] if no_attacks else meta["weapons"]):
     kw = [f"{n} {m[k_]}" for n, k_ in [("Precision", "precision"), ("Critical Hit", "critical"),
                                        ("Tough", "tough"), ("Dodge", "dodge"),
                                        ("Concentrated Fire", "concentrated_fire")] if m[k_]]
@@ -707,7 +726,7 @@ for i, m in enumerate(meta["weapons"]):
             else "Impact rolls (separate attack)" if i == impact_idx
             else f"{m['name']} (ability attack)" if i in ab_idx
             else f"{m['name']} (separate attack)" if i in auto_idx
-            else f"{'Main weapon' if i == 0 else 'Sidearm'} ({m['name']})")
+            else f"Weapon ({m['name']})")
     hit_txt = "auto-hit" if m["hit_target"] is None else f"{m['hit_target']}+"
     st.caption(
         f"{lead}: Attack pool **{m['pool']}** dice - Hit **{hit_txt}** - "
@@ -718,8 +737,8 @@ if direct_total:
     st.caption("Direct damage (no dice, ignores Armour, Evade and Total damage reduction): "
                + ", ".join(f"{n} **{v}**" for n, v in direct_abilities) + f" = **{direct_total}**")
 st.caption(f"First model HP incl. Shield **{meta['first_model_hp']}**"
-           + (" - weapons resolve in order (main first); Concentrated Fire only limits its own weapon"
-              if len(meta["weapons"]) > 1 else ""))
+           + (" - attacks resolve in the order listed; Concentrated Fire only limits its own weapon"
+              if len(meta["weapons"]) > 1 and not no_attacks else ""))
 
 c1, c2 = st.columns(2)
 with c1:

@@ -604,7 +604,12 @@
             "grant_evade_roll": true
           },
           "phase": "melee",
-          "note": "1 CP. Always eligible to make an Evade roll against Close Combat attacks."
+          "note": "1 CP. Always eligible to make an Evade roll against Close Combat attacks and abilities that hit (Impact, auto-hit abilities like Shadow Strike). Not against direct damage or ability attacks that count as guns.",
+          "scope": "all",
+          "also_reaches": [
+            "impact",
+            "auto"
+          ]
         }
       ]
     },
