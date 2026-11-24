@@ -129,7 +129,7 @@
     },
     "Zerg: Malignant Creep - Impact +1 to Hit": {
       "faction": "Zerg",
-      "phase": "melee",
+      "phase": "ranged",
       "targets": [
         "impact"
       ],
@@ -139,7 +139,7 @@
     },
     "Zerg: Evolution Chamber - Impact +1 to Hit": {
       "faction": "Zerg",
-      "phase": "melee",
+      "phase": "ranged",
       "targets": [
         "impact"
       ],
