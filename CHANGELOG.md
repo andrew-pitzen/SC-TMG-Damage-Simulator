@@ -6,8 +6,8 @@
 - Swapped Potent Bile debuff to Attacker Side, Vile Debilitating Saliva to Defender Side and added Vileling Debilitating Claws
 - Added Raven Seeker missile and added the Auto Turret's Gauss Cannon as a "sidearm" for Raven
 - Added a global "Not Shooting" option to make impact/ability damage calculations easier
-- Added Bile ability to ravagers
-- Changed the default unit for each race to Marine, Adept, Zergling
+- Added Bile ability to Ravagers
+- Changed the default unit for each race to Marine, Adept/Zealot, Zergling
 
 ### 2026-11-22
 - Added a Changelog
