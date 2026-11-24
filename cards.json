@@ -273,15 +273,6 @@
       },
       "note": "Friendly Mechanical unit, next Armour roll."
     },
-    "Terran: Raven Anti-Armour Missile (Armour -1 debuff)": {
-      "faction": "Terran",
-      "scope": "all",
-      "phase": "any",
-      "effects": {
-        "armour_mod": -1
-      },
-      "note": "Enemy within 12 inches gains DEBUFF Armour (1)."
-    },
     "Zerg: Reactive Tissue (Dodge 1, on Creep)": {
       "faction": "Zerg",
       "scope": "all",
@@ -310,6 +301,16 @@
         "total_reduction": 2
       },
       "note": "Friendly Biological unit within 4 inches."
+    },
+    "Terran: Raven Anti-Armour Missile (Armour -1 debuff)": {
+      "faction": "Terran",
+      "scope": "all",
+      "phase": "any",
+      "effects": {
+        "armour_mod": -1
+      },
+      "note": "Enemy within 12 inches gains DEBUFF Armour (1).",
+      "affects": "opponent"
     },
     "Zerg: Vile Debilitating Saliva (Hit -1 debuff on attacker)": {
       "faction": "Zerg",
