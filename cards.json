@@ -1,5 +1,5 @@
 {
-  "_readme": "Cards/abilities that modify an attack. 'phase': ranged | melee | any (a card is skipped when it does not match the selected weapon). Effects (attacker): hit_mod, bonus_dice_per_model, bonus_dice_flat, dmg_mod, surge_bonus, set_surge_die, grant_surge_die + grant_surge_plus + grant_surge_tags, reroll_hits, precision, critical, anti_evade, pierce_x+pierce_tag. Effects (defender): armour_mod, evade_mod, grant_evade (target number), reroll_armour, tough, dodge, damage_reduction (per die), total_reduction (off total damage), attack_pool_reduction, shield_bonus, hp_bonus, ignore_surge. +1 mod = easier. Text transcribed from the official card sheets; some wording was garbled in the source (see 'note'). Unit-specific passives, upgrades and abilities now live on each unit in units.json ('options'). Each card has a 'faction' (Terran | Zerg | Protoss | Generic); the app only offers the selected faction's cards plus Generic ones. 'scope': \"first\" (default) = the card only affects the attacker's main weapon (the first gun); \"all\" = it affects every weapon (Sidearms too) and, on the defender side, Impact rolls. Total damage reduction, HP bonus and Shield bonus always apply to the whole attack. Optional 'when': {\"own_size\": N} makes a card apply only to a unit of exactly that Size (the attacker for attacker cards, the defender for defender cards).",
+  "_readme": "Cards/abilities that modify an attack. 'phase': ranged | melee | any (a card is skipped when it does not match the selected weapon). Effects (attacker): hit_mod, bonus_dice_per_model, bonus_dice_flat, dmg_mod, surge_bonus, set_surge_die, grant_surge_die + grant_surge_plus + grant_surge_tags, reroll_hits, precision, critical, anti_evade, pierce_x+pierce_tag. Effects (defender): armour_mod, evade_mod, grant_evade (target number), reroll_armour, tough, dodge, damage_reduction (per die), total_reduction (off total damage), attack_pool_reduction, shield_bonus, hp_bonus, ignore_surge. +1 mod = easier. Text transcribed from the official card sheets; some wording was garbled in the source (see 'note'). Unit-specific passives, upgrades and abilities now live on each unit in units.json ('options'). Each card has a 'faction' (Terran | Zerg | Protoss | Generic); the app only offers the selected faction's cards plus Generic ones. 'scope': \"first\" (default) = the card only affects the attacker's main weapon (the first gun); \"all\" = it affects every weapon (Sidearms too) and, on the defender side, Impact rolls. Total damage reduction, HP bonus and Shield bonus always apply to the whole attack. Optional 'when': {\"own_size\": N} makes a card apply only to a unit of exactly that Size (the attacker for attacker cards, the defender for defender cards). 'affects': \"opponent\" marks a debuff played by one side that changes the OTHER side's numbers: an attacker card then holds defender effects (e.g. armour_mod) and a defender card holds attacker effects (e.g. hit_mod).",
   "attacker": {
     "Terran: Engineering Bay - Critical Hit (1)": {
       "faction": "Terran",
@@ -56,15 +56,6 @@
         "precision": 1
       },
       "note": "Kerrigan's Swarm, only while the unit is on Creep."
-    },
-    "Zerg: Vile Debilitating Saliva (Hit -1 debuff on attacker)": {
-      "faction": "Zerg",
-      "scope": "all",
-      "phase": "ranged",
-      "effects": {
-        "hit_mod": -1
-      },
-      "note": "DEBUFF Hit (1) on the attacking unit's ranged weapons."
     },
     "Protoss: Gateway - Quick Strikes (Precision 2)": {
       "faction": "Protoss",
@@ -145,6 +136,16 @@
       "effects": {
         "hit_mod": 1
       }
+    },
+    "Zerg: Ravager Potent Bile (Armour -1 debuff on enemy)": {
+      "faction": "Zerg",
+      "scope": "all",
+      "phase": "any",
+      "effects": {
+        "armour_mod": -1
+      },
+      "affects": "opponent",
+      "note": "DEBUFF Armour (1) on the enemy unit: its Armour rolls are 1 harder."
     },
     "Protoss: Nerazim - Might of the Nerazim (Critical Hit 2)": {
       "faction": "Protoss",
@@ -281,14 +282,6 @@
       },
       "note": "Enemy within 12 inches gains DEBUFF Armour (1)."
     },
-    "Zerg: Ravager Potent Bile (Armour -1 debuff)": {
-      "faction": "Zerg",
-      "scope": "all",
-      "phase": "any",
-      "effects": {
-        "armour_mod": -1
-      }
-    },
     "Zerg: Reactive Tissue (Dodge 1, on Creep)": {
       "faction": "Zerg",
       "scope": "all",
@@ -317,6 +310,26 @@
         "total_reduction": 2
       },
       "note": "Friendly Biological unit within 4 inches."
+    },
+    "Zerg: Vile Debilitating Saliva (Hit -1 debuff on attacker)": {
+      "faction": "Zerg",
+      "scope": "all",
+      "phase": "ranged",
+      "effects": {
+        "hit_mod": -1
+      },
+      "note": "DEBUFF Hit (1) on the attacking unit's ranged weapons.",
+      "affects": "opponent"
+    },
+    "Zerg: Vileling Debilitating Claws (Hit -1 debuff on attacker)": {
+      "faction": "Zerg",
+      "scope": "all",
+      "phase": "melee",
+      "effects": {
+        "hit_mod": -1
+      },
+      "note": "DEBUFF Hit (1) on the attacking unit's weapons.",
+      "affects": "opponent"
     },
     "Protoss: Robotics Facility - Plasma Shields (Tough 1 + Dodge 1)": {
       "faction": "Protoss",

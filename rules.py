@@ -31,6 +31,9 @@ units.json conventions
   unit["impact"]   : {"dice": 1, "hit": 4, "dmg": 1, "per_model": true, "verify": "..."}  Impact rolls for
                      a close combat attack: a separate extra attack, no attacker keywords/cards, only
                      defender effects with scope "all".
+  cards.json cards may set "affects": "opponent" -> a debuff on the enemy: an attacker card then holds
+                     DEFENDER effects (e.g. armour_mod -1) and a defender card holds ATTACKER effects
+                     (e.g. hit_mod -1); scope and "applies to" work as usual.
   cards.json attacker cards may set "targets": ["impact"] -> the card affects ONLY Impact rolls (no weapon
                      picker; ignored while Impact is off).
   effects may contain "dmg_set_target_size": true  -> damage equals the target's Size (min 1)
@@ -76,6 +79,13 @@ def direct_damage_list(unit: dict) -> list:
 
 def is_impact_option(opt: dict) -> bool:
     return "impact_dice" in opt
+
+
+def is_opponent_card(card: dict) -> bool:
+    """A card played by one side whose effects land on the OTHER side (a debuff on the enemy):
+    an attacker card with defender effects (e.g. Armour -1) or a defender card with attacker effects
+    (e.g. Hit -1 on the attacking unit)."""
+    return card.get("affects") == "opponent"
 
 
 def card_targets(card: dict) -> list:

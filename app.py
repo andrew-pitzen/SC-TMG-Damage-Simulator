@@ -487,7 +487,7 @@ with left:
     st.markdown("**Tactical cards / other buffs**")
     atk_cards = st.multiselect("Attacker cards", cards_for("attacker", a_faction), key=f"a_cards_{a_faction}",
                                format_func=lambda n: rules.card_label(n, CARDS["attacker"][n]),
-                               help="Shows your faction's cards plus Generic ones. A card affects the main weapon unless you pick other "
+                               help="Shows your faction's cards plus Generic ones. Debuff cards (e.g. Potent Bile) change the defender's numbers. A card affects the main weapon unless you pick other "
                                     "attacks for it (Sidearms) or it is tagged [all weapons]. Attacker cards never affect Impact rolls "
                                     "or auto-hit abilities, except cards marked [Impact only], which affect only Impact rolls. "
                                     "Cards that don't match the weapon type (ranged/melee) or the unit's Size are ignored. "
@@ -515,7 +515,7 @@ with def_card_box:
     st.markdown("**Tactical cards / other buffs**")
     def_cards = st.multiselect("Defender cards", cards_for("defender", d_faction), key=f"d_cards_{d_faction}",
                                format_func=lambda n: rules.card_label(n, CARDS["defender"][n]),
-                               help="A card affects the attacker's main weapon unless you pick other attacks for it (Sidearms, Impact rolls, "
+                               help="Debuff cards (e.g. Debilitating Saliva) change the attacker's numbers. A card affects the attacker's main weapon unless you pick other attacks for it (Sidearms, Impact rolls, "
                                     "auto-hit abilities) or it is tagged [all weapons], which applies to every attack including those. "
                                     "Total damage reduction, HP and Shield bonuses always apply to the whole attack.")
     def_used, def_skipped = usable("defender", def_cards, d_size, a_phase)
@@ -547,19 +547,38 @@ d_opts_skipped = [o["name"] for o in d_opts if not rules.phase_ok(o, a_phase)]
 # SCOPE. Cards tagged scope "all" reach every attack. Other cards reach only the attacks the player
 # picked for them (default: the main weapon). Each Sidearm also gets its own custom box. Impact rolls
 # are a separate extra attack: no attacker effects at all; defender cards can target them.
-all_attack_fx = ([CARDS["attacker"][c]["effects"] for c in atk_used if rules.is_all_scope(CARDS["attacker"][c])]
+# "Opponent" cards (debuffs, e.g. Potent Bile / Debilitating Saliva) are played by one side but change the
+# OTHER side's numbers: attacker cards of that kind become defender effects and defender cards of that
+# kind become attacker effects. They keep their scope and "applies to" choice.
+own_atk_cards = [c for c in atk_used if not rules.is_opponent_card(CARDS["attacker"][c])]
+atk_debuffs = [c for c in atk_used if rules.is_opponent_card(CARDS["attacker"][c])]
+own_def_cards = [c for c in def_used if not rules.is_opponent_card(CARDS["defender"][c])]
+def_debuffs = [c for c in def_used if rules.is_opponent_card(CARDS["defender"][c])]
+
+
+def debuff_hits(card, tid):
+    """Does this defender debuff card reach the attack with this id?"""
+    return rules.is_all_scope(card) or tid in def_assign.get(card_name_of[id(card)], ["main"])
+
+
+card_name_of = {id(CARDS["defender"][c]): c for c in def_debuffs}
+all_attack_fx = ([CARDS["attacker"][c]["effects"] for c in own_atk_cards if rules.is_all_scope(CARDS["attacker"][c])]
                  + [rules.option_effects(o, d_size) for o in a_all_opts])
 attack_mods = []
 for i, e in enumerate(entries):
-    picked = [CARDS["attacker"][c]["effects"] for c in atk_used
+    picked = [CARDS["attacker"][c]["effects"] for c in own_atk_cards
               if c in atk_assign and entry_ids[i] in atk_assign[c]]
-    extra = picked + [custom_first if i == 0 else custom_sides[i]]
+    debuffs = [CARDS["defender"][c]["effects"] for c in def_debuffs if debuff_hits(CARDS["defender"][c], entry_ids[i])]
+    extra = picked + debuffs + [custom_first if i == 0 else custom_sides[i]]
     attack_mods.append(combine(e["effects"] + all_attack_fx + extra, AttackMods))
 atk_mods = attack_mods[0]
 
 def_items = ([(rules.scope_of(o), rules.option_effects(o, d_size), ["main"]) for o in d_opts_used]
              + [(rules.scope_of(CARDS["defender"][c]), CARDS["defender"][c]["effects"], def_assign.get(c, ["main"]))
-                for c in def_used]
+                for c in own_def_cards]
+             # debuff cards played by the attacker: defender effects on the attacks they were assigned to
+             + [(rules.scope_of(CARDS["attacker"][c]), CARDS["attacker"][c]["effects"], atk_assign.get(c, ["main"]))
+                for c in atk_debuffs]
              # each custom box applies to its own attack (its Extra Shield / Total reduction stay attack-wide)
              + [("first", custom_defs[t], [t]) for t in def_target_ids])
 def_mods, def_by_target = rules.defend_mods_by_target(def_items, def_target_ids)
@@ -569,8 +588,10 @@ attacks = [(e["weapon"], m, def_by_target[entry_ids[i]])
 impact_idx = None
 if impact_on:
     impact_idx = len(attacks)
-    impact_mods = combine([CARDS["attacker"][c]["effects"] for c in atk_used
-                           if "impact" in rules.card_targets(CARDS["attacker"][c])], AttackMods)
+    impact_mods = combine([CARDS["attacker"][c]["effects"] for c in own_atk_cards
+                           if "impact" in rules.card_targets(CARDS["attacker"][c])]
+                          + [CARDS["defender"][c]["effects"] for c in def_debuffs
+                             if debuff_hits(CARDS["defender"][c], "impact")], AttackMods)
     attacks.append((impact_weapon, impact_mods, def_by_target["impact"]))
 auto_idx = set()
 for tid, aw in auto_weapons:
