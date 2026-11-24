@@ -33,6 +33,17 @@
       },
       "note": "Jim Raynor Orders on a friendly Biological unit within 8 inches. Cost/wording partly garbled in source."
     },
+    ,
+    "Terran: Raven Anti-Armour Missile (Armour -1 debuff)": {
+      "faction": "Terran",
+      "scope": "all",
+      "phase": "any",
+      "effects": {
+        "armour_mod": -1
+      },
+      "note": "Enemy within 12 inches gains DEBUFF Armour (1).",
+      "affects": "opponent"
+    },
     "Zerg: Hydralisk Den - Missile Attacks (Precision 1)": {
       "faction": "Zerg",
       "phase": "ranged",
@@ -301,17 +312,7 @@
         "total_reduction": 2
       },
       "note": "Friendly Biological unit within 4 inches."
-    },
-    "Terran: Raven Anti-Armour Missile (Armour -1 debuff)": {
-      "faction": "Terran",
-      "scope": "all",
-      "phase": "any",
-      "effects": {
-        "armour_mod": -1
-      },
-      "note": "Enemy within 12 inches gains DEBUFF Armour (1).",
-      "affects": "opponent"
-    },
+    }
     "Zerg: Vile Debilitating Saliva (Hit -1 debuff on attacker)": {
       "faction": "Zerg",
       "scope": "all",
