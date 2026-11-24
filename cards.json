@@ -311,7 +311,7 @@
         "total_reduction": 2
       },
       "note": "Friendly Biological unit within 4 inches."
-    }
+    },
     "Zerg: Vile Debilitating Saliva (Hit -1 debuff on attacker)": {
       "faction": "Zerg",
       "scope": "all",
