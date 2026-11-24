@@ -781,6 +781,12 @@
       "weapons": []
     },
     "Raven": {
+      "auto_hits": {
+        "label": "Seeker Missile",
+        "phase": "ranged",
+        "dice": 4,
+        "dmg": 2
+      },
       "tags": [
         "Light",
         "Mechanical",
