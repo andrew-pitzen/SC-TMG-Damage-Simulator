@@ -2334,6 +2334,158 @@
         }
       ]
     },
+    "Infested Goliath": {
+      "impact": {
+        "dice": 4,
+        "hit": 3,
+        "dmg": 1,
+        "per_model": true
+      },
+      "tags": [
+        "Armoured",
+        "Mechanical",
+        "Ground"
+      ],
+      "armour": 4,
+      "evade": null,
+      "hp": 10,
+      "shield": 0,
+      "models_default": 1,
+      "models_max": 1,
+      "size": 3,
+      "weapons": [
+        {
+          "name": "Autocannon",
+          "phase": "ranged",
+          "rng": 12,
+          "target": "Ground",
+          "roa": 9,
+          "hit": 4,
+          "dmg": 1,
+          "keywords": [
+            "Long Range 18\""
+          ]
+        },
+        {
+          "name": "Underbelly Machine Gun",
+          "phase": "ranged",
+          "rng": 8,
+          "target": "Ground",
+          "roa": 6,
+          "hit": 3,
+          "dmg": 1,
+          "surge": "D3",
+          "surge_tags": [
+            "Light"
+          ],
+          "keywords": [
+            "Pinpoint",
+            "Sidearm"
+          ]
+        },
+        {
+          "name": "Hellfire Missiles",
+          "phase": "ranged",
+          "rng": 16,
+          "target": "Flying",
+          "roa": 6,
+          "hit": 3,
+          "dmg": 1,
+          "surge": "D3",
+          "surge_tags": [
+            "Light"
+          ],
+          "anti_evade": 1,
+          "keywords": [
+            "Anti-Evade (1)",
+            "Sidearm"
+          ]
+        },
+        {
+          "name": "Scatter Missiles (upgrade)",
+          "phase": "ranged",
+          "rng": 18,
+          "target": "Ground",
+          "roa": 6,
+          "hit": 5,
+          "dmg": 1,
+          "surge": "D3",
+          "surge_tags": [
+            "Light"
+          ],
+          "keywords": [
+            "Indirect Fire",
+            "Locked In (6)",
+            "Long Range 24\"",
+            "Sidearm"
+          ],
+          "upgrade": true
+        },
+        {
+          "name": "Haywire Missiles (upgrade)",
+          "phase": "ranged",
+          "rng": 12,
+          "target": "Ground",
+          "roa": 3,
+          "hit": 3,
+          "dmg": 1,
+          "surge": "D3",
+          "surge_tags": [
+            "Armoured"
+          ],
+          "pierce_x": 3,
+          "pierce_tag": "Armoured",
+          "keywords": [
+            "Pierce Armoured (3)",
+            "Sidearm"
+          ],
+          "upgrade": true
+        },
+        {
+          "name": "Stomp",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 4,
+          "hit": 5,
+          "dmg": 1
+        }
+      ],
+      "options": [
+        {
+          "name": "Ares-Class Targeting System",
+          "kind": "upgrade",
+          "side": "attack",
+          "effects": {
+            "precision": 1
+          },
+          "phase": "ranged",
+          "weapons": [
+            "Autocannon",
+            "Underbelly Machine Gun"
+          ],
+          "note": "Autocannon and Underbelly Machine Gun gain Precision (1)."
+        },
+        {
+          "name": "Target Lock",
+          "kind": "ability",
+          "side": "attack",
+          "effects": {
+            "grant_surge_die": "D3",
+            "grant_surge_plus": 1,
+            "grant_surge_tags": [
+              "Light",
+              "Armoured"
+            ]
+          },
+          "phase": "ranged",
+          "weapons": [
+            "Autocannon"
+          ],
+          "note": "1 CP. Autocannon gains Surge Light + Armoured with S Dice D3+1."
+        }
+      ]
+    },
     "Infested Marine": {
       "impact": {
         "dice": 2,
@@ -2474,6 +2626,157 @@
           "keywords": [
             "Anti-Evade (1)"
           ]
+        }
+      ]
+    },
+    "Infested Siege Tank": {
+      "impact": {
+        "dice": 4,
+        "hit": 3,
+        "dmg": 1,
+        "per_model": true
+      },
+      "tags": [
+        "Armoured",
+        "Mechanical",
+        "Ground"
+      ],
+      "armour": 5,
+      "evade": null,
+      "hp": 14,
+      "shield": 0,
+      "models_default": 1,
+      "models_max": 1,
+      "size": 2,
+      "weapons": [
+        {
+          "name": "Twin Cannon",
+          "phase": "ranged",
+          "rng": 12,
+          "target": "Ground",
+          "roa": 8,
+          "hit": 3,
+          "dmg": 1,
+          "surge": "D6",
+          "surge_tags": [
+            "Armoured"
+          ],
+          "pierce_x": 2,
+          "pierce_tag": "Armoured",
+          "keywords": [
+            "Pierce Armoured (2)"
+          ],
+          "requires": {
+            "Siege Mode": false
+          }
+        },
+        {
+          "name": "Shock Cannon",
+          "phase": "ranged",
+          "rng": 18,
+          "target": "Ground",
+          "roa": 4,
+          "hit": 4,
+          "dmg": 1,
+          "surge": "BT",
+          "surge_tags": [
+            "Light",
+            "Armoured"
+          ],
+          "blast": true,
+          "requires": {
+            "Siege Mode": true
+          },
+          "keywords": [
+            "Blast Template: RoA = BT + 4, S Dice = BT"
+          ]
+        },
+        {
+          "name": "Rolling Over",
+          "phase": "melee",
+          "rng": "E",
+          "target": "Ground",
+          "roa": 2,
+          "hit": 2,
+          "dmg": 1
+        }
+      ],
+      "toggles": [
+        {
+          "name": "Siege Mode",
+          "label": "Siege Mode (Size 3; changes weapons and abilities)",
+          "default": false,
+          "size_when_on": 3
+        }
+      ],
+      "options": [
+        {
+          "name": "Heavy Plating",
+          "scope": "all",
+          "kind": "passive",
+          "side": "defend",
+          "effects": {
+            "tough": 1
+          },
+          "phase": "any",
+          "when": {
+            "toggle": {
+              "Siege Mode": false
+            }
+          },
+          "note": "Gains Tough (1) on Armour rolls while NOT in Siege Mode."
+        },
+        {
+          "name": "Aftershock Rounds",
+          "scope": "all",
+          "kind": "passive",
+          "side": "attack",
+          "effects": {
+            "dmg_set_target_size": true
+          },
+          "phase": "any",
+          "when": {
+            "toggle": {
+              "Siege Mode": true
+            }
+          },
+          "note": "While in Siege Mode, Damage is treated as equal to the target's current Size (min 1). Applied to every weapon"
+        },
+        {
+          "name": "Shaped Blast",
+          "kind": "ability",
+          "side": "attack",
+          "effects": {
+            "bonus_dice_per_model": 4
+          },
+          "keywords": [
+            "Pinpoint",
+            "Locked In (4)"
+          ],
+          "phase": "ranged",
+          "when": {
+            "toggle": {
+              "Siege Mode": true
+            }
+          },
+          "note": "Once per Game. When this Unit declares a Ranged Attack action. If this Unit has SIEGE MODE Status, its weapon gains PINPOINT and LOCKED IN (4)."
+        },
+        {
+          "name": "Smart Shells",
+          "kind": "ability",
+          "side": "attack",
+          "effects": {},
+          "keywords": [
+            "Indirect Fire",
+            "Long Range 24\""
+          ],
+          "phase": "ranged",
+          "when": {
+            "toggle": {
+              "Siege Mode": true
+            }
+          },
+          "note": "Once per Game. When this Unit declares a Ranged Attack action. If this Unit has SIEGE MODE Status, its weapon gains INDIRECT FIRE and LONG RANGE (24)."
         }
       ]
     },
